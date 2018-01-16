@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import cx_Oracle
-
+import config
 
 def RSWconnection():
-    return cx_Oracle.connect('krzemwo1/boFnMF8zAJIB2sx!@10.236.28.53:1521/RSW')
+    return cx_Oracle.connect('{}/{}@{}'.format(config.rsw['user'], config.rsw['password'], config.rsw['server']))
 
 
 def getOrderId(con, msisdn, status):

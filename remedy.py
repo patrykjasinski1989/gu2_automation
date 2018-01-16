@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from pyremedy import ARS, ARSError
+import config
 
-server = '126.185.108.140'
-port = 60000
-user = 'jasinpa4'
-password = 'Styczen123!'
+server = config.remedy['server']
+port = config.remedy['port']
+user = config.remedy['user']
+password = config.remedy['password']
 
 
 def getIncidents(group, tier1, tier2, tier3):

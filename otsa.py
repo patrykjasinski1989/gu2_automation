@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import cx_Oracle
-
+import config
 
 def OTSAconnection():
-    return cx_Oracle.connect('mprota02/UiKhAjzuh^mXDfGQW7nbW@10.236.28.107:1521/OTSA')
+    return cx_Oracle.connect('{}/{}@{}'.format(config.otsa['user'], config.otsa['password'], config.otsa['server']))
 
 
 def searchMsisdn(con, msisdn):

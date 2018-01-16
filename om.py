@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 import requests
 from requests.auth import HTTPBasicAuth
+import config
+
+server = config.om['server']
+user = config.om['user']
+password = config.om['password']
 
 
 def getOrders(msisdn):
 
-    eai_vadmin = 'http://172.30.70.10:6655'
-    username = 'krzemwo1'
-    password = '34890'
-
     s = requests.session()
-    url = '{}/PtkOMConsole/requests/ordersByKey.dsp?key={}'.format(eai_vadmin, msisdn)
-    response = s.get(url=url, auth=HTTPBasicAuth(username, password), timeout=3)
+    url = '{}/PtkOMConsole/requests/ordersByKey.dsp?key={}'.format(server, msisdn)
+    response = s.get(url=url, auth=HTTPBasicAuth(user, password), timeout=3)
     lines = response.text.split('\n')
 
     cnt = 0

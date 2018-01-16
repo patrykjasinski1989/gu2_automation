@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import cx_Oracle
-
+import config
 
 def BSCSconnection():
-    return cx_Oracle.connect('krzemwo1/Xl8aBVPjd7pEsvn!@10.236.28.81:1526/BSCS')
+    return cx_Oracle.connect('{}/{}@{}'.format(config.bscs['user'], config.bscs['password'], config.bscs['server']))
 
 
 def getCustomerId(con, custcode):

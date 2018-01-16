@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import cx_Oracle
-
+import config
 
 def NRAconnection():
-    return cx_Oracle.connect('nra/nowenra@10.236.28.66:1526/NRA')
+    return cx_Oracle.connect('{}/{}@{}'.format(config.nra['user'], config.nra['password'], config.nra['server']))
 
 
 def getSimStatus(con, sim):

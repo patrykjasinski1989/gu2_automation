@@ -3,20 +3,17 @@ import requests
 from requests.exceptions import ConnectTimeout
 
 from rsw import RSWconnection, getOrderId, setOrderStatus
-
+import config
 
 def unlockImei(imei):
-    proxies = {
-        'http': 'socks5://172.30.70.158:6655',
-        'https': 'socks5://172.30.70.158:6655'
-    }
+    proxies = config.muchomor['proxies']
 
-    url = 'http://126.16.23.48:8082/Muchomor-App/'
+    url = config.muchomor['url']
     s = requests.session()
     try:
         s.get(url=url+'pagIMEI.jsf', proxies=proxies, timeout=2)
         s.post(url=url+'j_security_check', proxies=proxies,
-           data={'j_username': 'mporta02', 'j_password': 'afdf1734'})
+           data={'j_username': config.muchomor['user'], 'j_password': config.muchomor['password']})
         response = s.get(url=url+'pagIMEI.jsf', proxies=proxies)
         javaxFaces = response.text.split('id="javax.faces.ViewState" value="')[1].split('"')[0]
     except:
