@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 import requests
 
+import config
+
+server = config.eai['server']
 
 def getContractData(msisdn):
-    url = 'http://eai2-vip.centertel.pl:4125/invoke/ptk.adapter.rsw.billing/getContractData?msisdn={}'.format(msisdn)
+    url = '{0}/invoke/ptk.adapter.rsw.billing/getContractData?msisdn={1}'.format(server, msisdn)
     response = requests.get(url)
     return response.text.split('\n')
 
 
 def getExpirationDate(contractData):
+    expirationDate = ''
     expirationDateInNextLine = False
     for line in contractData:
         if 'expirationDate' in line:
