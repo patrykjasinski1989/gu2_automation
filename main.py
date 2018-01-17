@@ -181,18 +181,7 @@ def problemsWithOffer():
 
 
 if __name__ == '__main__':
-    problemsWithOffer()
-    exit(666)
-    #schemas = getSchemas()
-    #for schema in schemas:
-    #    if 'work' in schema.lower():
-    #        print schema
-    #exit(666)
-    #fields = getFields('HPD:Help Desk Classic')
-    #for field in sorted(fields):
-    #    if 'work' in field.lower():
-    #        print field
-    #exit(666)
+
     print "ODBLOKOWANIE IMEI"
     unlockImeis()
     print "AKTYWACJA KLIENTA"
@@ -201,4 +190,5 @@ if __name__ == '__main__':
     migrateCustomers()
     print "UWOLNIENIE ZASOBÓW"
     releaseResources()
-    # exit(666)
+    print "PROBLEMY Z OFERTĄ"
+    problemsWithOffer()
