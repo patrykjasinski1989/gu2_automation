@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 import re
 
+from datetime import datetime
+from dateutil import parser
+
+from eai import getExpirationDate, getContractData
 from muchomor import unlockImei
 from nra import getSimStatus, NRAconnection, setSimStatusNRA, setSimStatusBSCS, setIMSIStatusBSCS
 from otsa import OTSAconnection, checkSIM
 from otsa_processing import processMsisdns
-from remedy import getIncidents, closeIncident, emptyInc, getFields, addWorkInfo, updateSummary, getSchemas
+from remedy import getIncidents, closeIncident, emptyInc
 
 
 def unlockImeis():
@@ -143,7 +147,42 @@ def releaseResources():
     otsa.close()
 
 
+def problemsWithOffer():
+    incidents = getIncidents(
+        'VC_BSS_MOBILE_RSW',
+        '000_incydent/awaria/uszkodzenie',
+        'RSW / nBUK',
+        'PROBLEMY Z OFERTĄ I TERMINALAMI'
+    )
+    for inc in incidents:
+
+        msisdnInNextLine = False
+        offerName = ''
+        for line in inc['notes']:
+            if 'Numer telefonu klienta Orange / MSISDN' in line:
+                msisdnInNextLine = True
+                continue
+            if msisdnInNextLine:
+                msisdn = line.strip()
+                msisdnInNextLine = False
+            if 'Proszę o dodanie oferty: ' in line:
+                offerName = line.split(': ')[1].split('.')[0]
+
+        expirationDate = getExpirationDate(getContractData(msisdn))
+        dt = parser.parse(expirationDate)
+        now = datetime.now()
+        if (offerName.lower() == 'plan komórkowy' or offerName.lower() == 'internet mobilny') and (dt - now).days > 120:
+            resolution = 'Klient ma lojalkę do {0}. Zgodnie z konfiguracją marketingową oferta {1} ' \
+                         'jest dostępna na 120 dni przed końcem lojalki, czyli klient tych wymagań nie spełnia. ' \
+                         'Brak błędu aplikacji.'.format(expirationDate, offerName)
+            closeIncident(inc, resolution)
+            print '{}: {}'.format(inc['inc'], resolution)
+
+
+
 if __name__ == '__main__':
+    problemsWithOffer()
+    exit(666)
     #schemas = getSchemas()
     #for schema in schemas:
     #    if 'work' in schema.lower():
