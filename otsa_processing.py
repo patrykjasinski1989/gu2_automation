@@ -47,6 +47,7 @@ def processMsisdns(msisdns, inc):
 
 
 def process2Y(otsa, contract, inc):
+    resolution = ''
 
     toCancel = False
     for line in inc['notes']:
@@ -98,9 +99,9 @@ def process3C(otsa, contract, inc):
         resolution = 'Tak wygląda proces sprzedażowy dla Magnumów. Jeśli nie było logistyki (w OM lub w kanale), ' \
                      'to zlecenie MV musi być zawieszone w OM (HALTED) i dopiero wtedy można złożyć zlecenie DATA.'
     elif contract['process_error'] == 90100:
-	transactions = searchCart(otsa, contract['cart_code'])
-	for t in transactions:
-        	fix90100(otsa, t['trans_code'])
+        transactions = searchCart(otsa, contract['cart_code'])
+        for t in transactions:
+            fix90100(otsa, t['trans_code'])
         resolution = ''
     elif contract['process_error'] == 21220:
         updateTransaction(otsa, contract['trans_code'], '1C')
@@ -124,7 +125,7 @@ def process3C(otsa, contract, inc):
         resolution = contract['ncs_error_desc'] + '\nUmowa w statusie do poprawy. ' \
                                                   'W razie wątpliwości proszę o kontakt z Dealer Support.'
         return resolution
-    elif 'na zleceniu nie odpowiada' in contract['ncs_error_desc']:
+    elif contract['ncs_error_desc'] is not None and 'na zleceniu nie odpowiada' in contract['ncs_error_desc']:
         reassignIncident(inc, 'OM')
         resolution = ''
     else:
@@ -172,12 +173,13 @@ def process3A(otsa, contract, inc):
     for line in inc['notes']:
         if 'koszyk' in line:
             opti = OPTIconnection()
-            cartStatus = getCartStatus(opti, contract['cart_code'])
-            if cartStatus not in ['3A', '3D']:
-                setCartStatus(opti, contract['cart_code'], '3A')
-                resolution += 'Koszyk {} zamknięty.\n'.format(contract['cart_code'])
-                opti.close()
-                return resolution
+            if contract['cart_code'] is not None:
+                cartStatus = getCartStatus(opti, contract['cart_code'])
+                if cartStatus not in ['3A', '3D']:
+                    setCartStatus(opti, contract['cart_code'], '3A')
+                    resolution += 'Koszyk {} zamknięty.\n'.format(contract['cart_code'])
+                    opti.close()
+                    return resolution
     else:
         resolution = ''
     return resolution
