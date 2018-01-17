@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from bscs import getCustomerId, BSCSconnection
 from om import getOrders
+from optipos import getCartStatus, OPTIconnection, setCartStatus
 from otsa import searchMsisdn, updateTransaction, updateContract, fix90100, fixCSC185, searchCart, OTSAconnection, \
     fixPesel, fixCSC178, fixAAC
 from remedy import reassignIncident, updateSummary
@@ -165,8 +166,18 @@ def process1H(otsa, contract, inc):
 
 
 def process3A(otsa, contract, inc):
+    resolution = ''
     if contract['status'] == '3A' and inc['summary'] == 'ponowione':
-        resolution = 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.'
+        resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.\n'
+    for line in inc['notes']:
+        if 'koszyk' in line:
+            opti = OPTIconnection()
+            cartStatus = getCartStatus(opti, contract['cart_code'])
+            if cartStatus not in ['3A', '3D']:
+                setCartStatus(opti, contract['cart_code'], '3A')
+                resolution += 'Koszyk {} zamknięty.\n'.format(contract['cart_code'])
+                opti.close()
+                return resolution
     else:
         resolution = ''
     return resolution
@@ -188,7 +199,4 @@ def process1C(otsa, contract, inc):
     return resolution
 
 def process8B(otsa, contract, inc):
-    updateTransaction(otsa, contract['trans_code'], '3D')
-    updateContract(otsa, contract['trans_code'], '3D')
-    resolution = 'Umowa ' + contract['trans_num'] + ' anulowana.'
-    return resolution
+    process1C(otsa, contract, inc)

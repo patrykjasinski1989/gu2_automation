@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import cx_Oracle
+
 import config
+
 
 def OTSAconnection():
     return cx_Oracle.connect('{}/{}@{}'.format(config.otsa['user'], config.otsa['password'], config.otsa['server']))
@@ -11,7 +13,7 @@ def searchMsisdn(con, msisdn):
     cur.execute('select t.cart_code, t.trans_code, con.msisdn, t.status, t.ncs_trans_num, t.om_order_id, '
                 't.process_error, t.ncs_error_desc, t.trans_type, t.author_user_code, t.trans_num, t.create_date, '
                 'crm_customer_id, t.custcode from ptk_otsa_transaction t, ptk_otsa_trans_contract con '
-                'where t.trans_code = con.trans_code and con.msisdn = \'' + str(msisdn) +'\'')
+                'where t.trans_code = con.trans_code (+) and con.msisdn = \'' + str(msisdn) + '\'')
     rows = cur.fetchall()
     cur.close()
     dict_rows = []
