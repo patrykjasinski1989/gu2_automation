@@ -31,6 +31,8 @@ def processMsisdns(msisdns, inc):
                 partialResolution = process3A(otsa, contract, inc)
             elif contract['status'] == '1C':
                 partialResolution = process1C(otsa, contract, inc)
+            elif contract['status'] == '8B':
+                partialResolution = process8B(otsa, contract, inc)
             else:
                 partialResolution = ''
 
@@ -121,6 +123,9 @@ def process3C(otsa, contract, inc):
         resolution = contract['ncs_error_desc'] + '\nUmowa w statusie do poprawy. ' \
                                                   'W razie wątpliwości proszę o kontakt z Dealer Support.'
         return resolution
+    elif 'na zleceniu nie odpowiada' in contract['ncs_error_desc']:
+        reassignIncident(inc, 'OM')
+        resolution = ''
     else:
         resolution = ''
     updateTransaction(otsa, contract['trans_code'], '1B')
@@ -180,4 +185,10 @@ def process1C(otsa, contract, inc):
     else:
         resolution = ''
 
+    return resolution
+
+def process8B(otsa, contract, inc):
+    updateTransaction(otsa, contract['trans_code'], '3D')
+    updateContract(otsa, contract['trans_code'], '3D')
+    resolution = 'Umowa ' + contract['trans_num'] + ' anulowana.'
     return resolution
