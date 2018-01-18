@@ -5,6 +5,7 @@ import config
 
 server = config.eai['server']
 
+
 def getContractData(msisdn):
     url = '{0}/invoke/ptk.adapter.rsw.billing/getContractData?msisdn={1}'.format(server, msisdn)
     response = requests.get(url)
@@ -26,4 +27,5 @@ def getExpirationDate(contractData):
 
 if __name__ == '__main__':
     print getExpirationDate(getContractData('573010799'))
+    print getExpirationDate(getContractData('5730107999'))
     exit(666)

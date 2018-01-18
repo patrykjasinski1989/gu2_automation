@@ -155,6 +155,7 @@ def problemsWithOffer():
         'PROBLEMY Z OFERTĄ I TERMINALAMI'
     )
     for inc in incidents:
+        resolution = ''
 
         msisdnInNextLine = False
         offerName = ''
@@ -169,14 +170,18 @@ def problemsWithOffer():
                 offerName = line.split(': ')[1].split('.')[0]
 
         expirationDate = getExpirationDate(getContractData(msisdn))
-        dt = parser.parse(expirationDate)
+        if expirationDate != '':
+            dt = parser.parse(expirationDate)
+        else:
+            continue
         now = datetime.now()
         if (offerName.lower() == 'plan komórkowy' or offerName.lower() == 'internet mobilny') and (dt - now).days > 120:
             resolution = 'Klient ma lojalkę do {0}. Zgodnie z konfiguracją marketingową oferta {1} ' \
                          'jest dostępna na 120 dni przed końcem lojalki, czyli klient tych wymagań nie spełnia. ' \
                          'Brak błędu aplikacji.'.format(expirationDate, offerName)
             closeIncident(inc, resolution)
-            print '{}: {}'.format(inc['inc'], resolution)
+
+        print '{}: {}'.format(inc['inc'], resolution)
 
 
 

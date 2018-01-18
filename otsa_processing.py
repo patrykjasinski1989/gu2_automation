@@ -126,7 +126,10 @@ def process3C(otsa, contract, inc):
                                                   'W razie wątpliwości proszę o kontakt z Dealer Support.'
         return resolution
     elif contract['ncs_error_desc'] is not None and 'na zleceniu nie odpowiada' in contract['ncs_error_desc']:
-        reassignIncident(inc, 'OM')
+        reassignIncident(inc, 'OV')
+        resolution = ''
+    elif contract['ncs_error_desc'] is not None and 'Voucher' in contract['ncs_error_desc']:
+        reassignIncident(inc, 'OV')
         resolution = ''
     else:
         resolution = ''

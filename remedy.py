@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from pyremedy import ARS, ARSError
+
 import config
 
 server = config.remedy['server']
@@ -78,7 +79,8 @@ def reassignIncident(inc, group):
         group_name = 'VC_BSS_MOBILE_' + group.upper()
 
     group_ids = {'VC_BSS_MOBILE_OM': 'SGP000000024567',
-                 'VC_BSS_MOBILE_NRA': 'SGP000000024570'}
+                 'VC_BSS_MOBILE_NRA': 'SGP000000024570',
+                 'VC_BSS_MOBILE_OV': 'SGP000000024585'}
 
     try:
         ars = ARS(
@@ -95,7 +97,7 @@ def reassignIncident(inc, group):
             }
         )
 
-        if group.upper() == 'OM':
+        if group.upper() in ['OM', 'OV']:
             ars.update(
                 schema='HPD:Help Desk Classic',
                 entry_id=inc['id'],
@@ -189,25 +191,3 @@ def emptyInc(inc):
         return False
 
 
-"""
-def updateWorkInfo(id, summary, notes):
-    try:
-        ars = ARS(
-            server=server, port=port,
-            user=user, password=password
-        )
-
-        ars.update(
-            schema='HPD:Help Desk Classic',
-            entry_id=id,
-            entry_values={
-
-            }
-        )
-
-    except ARSError as e:
-        print('ERROR: {}'.format(e))
-        return e
-    finally:
-        ars.terminate()
-"""
