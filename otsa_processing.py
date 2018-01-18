@@ -86,7 +86,7 @@ def process2Y(otsa, contract, inc):
 
 
 def process2B(otsa, contract, inc):
-    if inc['summary'] == 'ponowione':
+    if 'ponowione' in inc['summary']:
         resolution = 'Umowa ' + contract['trans_num'] + ' przekazana do realizacji.'
     else:
         reassignIncident(inc, 'OM')
@@ -159,7 +159,7 @@ def process1H(otsa, contract, inc):
         resolution = ''
         cart = searchCart(otsa, contract['cart_code'])
         for trans in cart:
-            if inc['summary'] == 'ponowione' and trans['process_error'] is None:
+            if 'ponowione' in inc['summary'] and trans['process_error'] is None:
                 fixPesel(otsa, trans['trans_code'])
             if trans['trans_type'] == 'CA' and trans['status'] == '3C':
                 resolution = process3C(otsa, trans, inc)
@@ -171,7 +171,7 @@ def process1H(otsa, contract, inc):
 
 def process3A(otsa, contract, inc):
     resolution = ''
-    if contract['status'] == '3A' and inc['summary'] == 'ponowione':
+    if contract['status'] == '3A' and 'ponowione' in inc['summary']:
         resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.\n'
     for line in inc['notes']:
         if 'koszyk' in line:
