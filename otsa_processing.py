@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from bscs import getCustomerId, BSCSconnection
+from bscs import getCustomerId, BSCSconnection, setTransNo
 from om import getOrders
 from optipos import getCartStatus, OPTIconnection, setCartStatus
 from otsa import searchMsisdn, updateTransaction, updateContract, fix90100, fixCSC185, searchCart, OTSAconnection, \
@@ -99,9 +99,14 @@ def process3C(otsa, contract, inc):
         resolution = 'Tak wygląda proces sprzedażowy dla Magnumów. Jeśli nie było logistyki (w OM lub w kanale), ' \
                      'to zlecenie MV musi być zawieszone w OM (HALTED) i dopiero wtedy można złożyć zlecenie DATA.'
     elif contract['process_error'] == 90100:
-        transactions = searchCart(otsa, contract['cart_code'])
-        for t in transactions:
-            fix90100(otsa, t['trans_code'])
+        if 'BSCS (47 - blad wewnetrzny systemu)' in contract['ncs_error_desc']:
+            bscs = BSCSconnection()
+            setTransNo(bscs, contract['custcode'], -1)
+            bscs.close()
+        else:
+            transactions = searchCart(otsa, contract['cart_code'])
+            for t in transactions:
+                fix90100(otsa, t['trans_code'])
         resolution = ''
     elif contract['process_error'] == 21220:
         updateTransaction(otsa, contract['trans_code'], '1C')
