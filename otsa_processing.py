@@ -48,15 +48,17 @@ def processMsisdns(msisdns, inc):
     return resolution, allResolved
 
 
+def toCancel(inc):
+    for line in inc['notes']:
+        if 'anulowa' in line.lower():
+            return True
+    return False
+
+
 def process2Y(otsa, contract, inc):
     resolution = ''
 
-    toCancel = False
-    for line in inc['notes']:
-        if 'anulowa' in line or 'ANULOWA' in line:
-            toCancel = True
-
-    if toCancel:
+    if toCancel(inc):
         updateTransaction(otsa, contract['trans_code'], '3D')
         updateContract(otsa, contract['trans_code'], '3D')
         resolution = 'Umowa ' + contract['trans_num'] + ' anulowana.'
@@ -196,12 +198,7 @@ def process3A(otsa, contract, inc):
 
 
 def process1C(otsa, contract, inc):
-    toCancel = False
-    for line in inc['notes']:
-        if 'anulowa' in line:
-            toCancel = True
-
-    if toCancel:
+    if toCancel(inc):
         updateTransaction(otsa, contract['trans_code'], '3D')
         updateContract(otsa, contract['trans_code'], '3D')
         resolution = 'Umowa ' + contract['trans_num'] + ' anulowana.'
@@ -217,12 +214,8 @@ def process8B(otsa, contract, inc):
 
 def process1D(otsa, contract, inc):
     resolution = ''
-    toCancel = False
-    for line in inc['notes']:
-        if 'anulowa' in line:
-            toCancel = True
 
-    if not toCancel:
+    if not toCancel(inc):
         updateTransaction(otsa, contract['trans_code'], '1B')
         updateSummary(inc, 'ponowione')
 
