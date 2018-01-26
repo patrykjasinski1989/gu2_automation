@@ -34,6 +34,8 @@ def processMsisdns(msisdns, inc):
                 partialResolution = process1C(otsa, contract, inc)
             elif contract['status'] == '8B':
                 partialResolution = process8B(otsa, contract, inc)
+            elif contract['status'] == '1D':
+                partialResolution = process1D(otsa, contract, inc)
             else:
                 partialResolution = ''
 
@@ -208,5 +210,20 @@ def process1C(otsa, contract, inc):
 
     return resolution
 
+
 def process8B(otsa, contract, inc):
     process1C(otsa, contract, inc)
+
+
+def process1D(otsa, contract, inc):
+    resolution = ''
+    toCancel = False
+    for line in inc['notes']:
+        if 'anulowa' in line:
+            toCancel = True
+
+    if not toCancel:
+        updateTransaction(otsa, contract['trans_code'], '1B')
+        updateSummary(inc, 'ponowione')
+
+    return resolution
