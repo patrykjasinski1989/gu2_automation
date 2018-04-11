@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import requests
-from requests.exceptions import ConnectTimeout
 
-from rsw import RSWconnection, getOrderId, setOrderStatus
+from rsw import rsw_connection, get_order_id, set_order_status
 import config
 
-def unlockImei(imei):
+
+def unlock_imei(imei):
     proxies = config.muchomor['proxies']
 
     url = config.muchomor['url']
@@ -13,24 +13,24 @@ def unlockImei(imei):
     try:
         s.get(url=url+'pagIMEI.jsf', proxies=proxies, timeout=2)
         s.post(url=url+'j_security_check', proxies=proxies,
-           data={'j_username': config.muchomor['user'], 'j_password': config.muchomor['password']})
+               data={'j_username': config.muchomor['user'], 'j_password': config.muchomor['password']})
         response = s.get(url=url+'pagIMEI.jsf', proxies=proxies)
-        javaxFaces = response.text.split('id="javax.faces.ViewState" value="')[1].split('"')[0]
-    except:
+        javax_faces = response.text.split('id="javax.faces.ViewState" value="')[1].split('"')[0]
+    except Exception:
         return ''
 
     payload = {
         'j_id_jsp_625197284_1:j_id_jsp_625197284_5': imei,
         'j_id_jsp_625197284_1:findImei': 'Szukaj',
         'j_id_jsp_625197284_1_SUBMIT': '1',
-        'javax.faces.ViewState': javaxFaces
+        'javax.faces.ViewState': javax_faces
     }
 
     payload2 = {
         'j_id_jsp_625197284_1:j_id_jsp_625197284_5': imei,
         'j_id_jsp_625197284_1:findImei': 'Szukaj',
         'j_id_jsp_625197284_1_SUBMIT': '1',
-        'javax.faces.ViewState': javaxFaces,
+        'javax.faces.ViewState': javax_faces,
         'salesPoint': '',
         'imei': imei,
         'promoCode': '',
@@ -51,11 +51,11 @@ def unlockImei(imei):
             msisdn = response.text.split('<tr><td>'+imei+'</td><td>')[-1].split('</td>')[0]
             resolution = result + ', na numerze MSISDN: ' + msisdn + '.'
             if 'Reklamacja' in result:
-                rsw = RSWconnection()
-                order_id = getOrderId(rsw, msisdn, '5')
-                setOrderStatus(rsw, order_id, '6')
-                resolution = unlockImei(imei)
-                setOrderStatus(rsw, order_id, '5')
+                rsw = rsw_connection()
+                order_id = get_order_id(rsw, msisdn, '5')
+                set_order_status(rsw, order_id, '6')
+                resolution = unlock_imei(imei)
+                set_order_status(rsw, order_id, '5')
                 rsw.close()
     elif 'Mo&#380;na odblokowa&#263;,' in result:
         response = s.post(url=url+'pagIMEI.jsf', proxies=proxies, data=payload2)

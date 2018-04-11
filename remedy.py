@@ -9,7 +9,7 @@ user = config.remedy['user']
 password = config.remedy['password']
 
 
-def getIncidents(group, tier1, tier2, tier3):
+def get_incidents(group, tier1, tier2, tier3):
     try:
         ars = ARS(
             server=server, port=port,
@@ -24,7 +24,7 @@ def getIncidents(group, tier1, tier2, tier3):
                                  AND 'Operational Categorization Tier 2' = "%s"
                                  AND 'Operational Categorization Tier 3' = "%s"
                                  """ % (group, tier1, tier2, tier3),
-            fields=['Incident Number', 'Detailed Decription', 'Description' ]
+            fields=['Incident Number', 'Detailed Decription', 'Description']
         )
 
         incidents = []
@@ -47,7 +47,7 @@ def getIncidents(group, tier1, tier2, tier3):
         ars.terminate()
 
 
-def closeIncident(inc, resolution):
+def close_incident(inc, resolution):
     try:
         ars = ARS(
             server=server, port=port,
@@ -73,7 +73,7 @@ def closeIncident(inc, resolution):
         ars.terminate()
 
 
-def reassignIncident(inc, group):
+def reassign_incident(inc, group):
 
     if '_' not in group and 'Servicedesk' not in group:
         group_name = 'VC_BSS_MOBILE_' + group.upper()
@@ -117,7 +117,7 @@ def reassignIncident(inc, group):
         ars.terminate()
 
 
-def updateSummary(inc, summary):
+def update_summary(inc, summary):
     try:
         ars = ARS(
             server=server, port=port,
@@ -139,13 +139,33 @@ def updateSummary(inc, summary):
         ars.terminate()
 
 
-def addWorkInfo(inc, summary, notes):
+def get_work_info(inc):
     try:
         ars = ARS(
             server=server, port=port,
             user=user, password=password
         )
-        # TODO
+
+        entries = ars.query(
+            schema='HPD:WorkLog',
+            qualifier=""" 'Incident Number' = "%s" """ % inc,
+            fields=['Description', 'Detailed Description', 'Submitter', 'Submit Date']
+        )
+
+        incidents = []
+        for entry_id, entry_values in entries:
+            for field, value in entry_values.items():
+                if field == 'Description':
+                    summary = value
+                elif field == 'Detailed Description':
+                    notes = value.split('\n')
+                elif field == 'Submitter':
+                    submitter = value
+                elif field == 'Submit Date':
+                    submit_date = value
+            incidents.append({'summary': summary, 'notes': notes, 'submitter': submitter, 'submit_date': submit_date})
+
+        return incidents
 
     except ARSError as e:
         print('ERROR: {}'.format(e))
@@ -154,7 +174,7 @@ def addWorkInfo(inc, summary, notes):
         ars.terminate()
 
 
-def getFields(schema):
+def get_fields(schema):
     try:
         ars = ARS(
             server=server, port=port,
@@ -169,7 +189,7 @@ def getFields(schema):
         ars.terminate()
 
 
-def getSchemas():
+def get_schemas():
     try:
         ars = ARS(
             server=server, port=port,
@@ -184,7 +204,7 @@ def getSchemas():
         ars.terminate()
 
 
-def emptyInc(inc):
+def is_empty(inc):
     lines = inc['notes']
     if '---[ dane identyfikacyjne komputera ]---' in lines[1] \
             and 'Lokalizacja: ' in lines[3] \
@@ -192,5 +212,3 @@ def emptyInc(inc):
                 return True
     else:
         return False
-
-

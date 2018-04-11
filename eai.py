@@ -6,26 +6,26 @@ import config
 server = config.eai['server']
 
 
-def getContractData(msisdn):
-    url = '{0}/invoke/ptk.adapter.rsw.billing/getContractData?msisdn={1}'.format(server, msisdn)
+def get_contract_data(msisdn):
+    url = '{0}/invoke/ptk.adapter.rsw.billing/get_contract_data?msisdn={1}'.format(server, msisdn)
     response = requests.get(url)
     return response.text.split('\n')
 
 
-def getExpirationDate(contractData):
-    expirationDate = ''
-    expirationDateInNextLine = False
-    for line in contractData:
-        if 'expirationDate' in line:
-            expirationDateInNextLine = True
+def get_expiration_date(contract_data):
+    expiration_date = ''
+    expiration_date_in_next_line = False
+    for line in contract_data:
+        if 'expiration_date' in line:
+            expiration_date_in_next_line = True
             continue
-        if expirationDateInNextLine:
-            expirationDate = line.split('<TD>')[1].split('</TD>')[0]
+        if expiration_date_in_next_line:
+            expiration_date = line.split('<TD>')[1].split('</TD>')[0]
             break
-    return expirationDate
+    return expiration_date
 
 
 if __name__ == '__main__':
-    print getExpirationDate(getContractData('573010799'))
-    print getExpirationDate(getContractData('5730107999'))
+    print get_expiration_date(get_contract_data('573010799'))
+    print get_expiration_date(get_contract_data('5730107999'))
     exit(666)

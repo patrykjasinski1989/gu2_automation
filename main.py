@@ -4,21 +4,21 @@ import re
 from datetime import datetime
 from dateutil import parser
 
-from eai import getExpirationDate, getContractData
-from muchomor import unlockImei
-from nra import getSimStatus, NRAconnection, setSimStatusNRA, setSimStatusBSCS, setIMSIStatusBSCS
-from otsa import OTSAconnection, checkSIM, unlockAccount
-from otsa_processing import processMsisdns
-from remedy import getIncidents, closeIncident, emptyInc, getSchemas, getFields, reassignIncident
+from eai import get_expiration_date, get_contract_data
+from muchomor import unlock_imei
+from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
+from otsa import otsa_connection, check_sim, unlock_account
+from otsa_processing import process_msisdns
+from remedy import get_incidents, close_incident, is_empty, get_work_info, get_fields
 
 
-def unlockImeis():
-    incidents = getIncidents(
+def unlock_imeis():
+    incidents = get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
         '000_incydent/awaria/uszkodzenie',
         'OPTIPOS - OFERTA PTK',
         'ODBLOKOWANIE IMEI'
-        )
+    )
 
     imei_regex = re.compile('[a-zA-Z0-9]{9,15}')
     imeis = []
@@ -27,152 +27,152 @@ def unlockImeis():
         lines = inc['notes']
         for i in range(len(lines)):
             if 'IMEI:' in lines[i]:
-                imeis = imei_regex.findall(lines[i+1])
+                imeis = imei_regex.findall(lines[i + 1])
                 break
         resolution = ''
-        if len(imeis)>0:
+        if len(imeis) > 0:
             for imei in imeis:
-                resolution += unlockImei(imei.upper()) + '\n'
-        if emptyInc(inc):
+                resolution += unlock_imei(imei.upper()) + '\n'
+        if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
         if resolution.strip() != '':
-            closeIncident(inc, resolution)
+            close_incident(inc, resolution)
         print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
-def activateCustomers():
-    incidents = getIncidents(
+def activate_customers():
+    incidents = get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
         '000_incydent/awaria/uszkodzenie',
         'OPTIPOS - OFERTA PTK',
         'AKTYWACJA KLIENTA'
     )
 
-    msisdn_regex = re.compile('[0-9]{9,9}')
+    msisdn_regex = re.compile('[0-9]{9}')
     for inc in incidents:
         resolution = ''
         lines = inc['notes']
-        allResolved = True
+        all_resolved = True
         for i in range(len(lines)):
             if 'Proszę podać numer MSISDN' in lines[i]:
-                msisdns = msisdn_regex.findall(lines[i+1])
-                resolution, allResolved = processMsisdns(msisdns, inc)
-        if emptyInc(inc):
+                msisdns = msisdn_regex.findall(lines[i + 1])
+                resolution, all_resolved = process_msisdns(msisdns, inc)
+        if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
-        if resolution != '' and allResolved:
-            closeIncident(inc, resolution)
+        if resolution != '' and all_resolved:
+            close_incident(inc, resolution)
         print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
-def migrateCustomers():
-    incidents = getIncidents(
+def migrate_customers():
+    incidents = get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
         '000_incydent/awaria/uszkodzenie',
         'OPTIPOS - OFERTA PTK',
         'MIGRACJA KLIENTA'
     )
 
-    msisdn_regex = re.compile('[0-9]{9,9}')
+    msisdn_regex = re.compile('[0-9]{9}')
     for inc in incidents:
         resolution = ''
         lines = inc['notes']
-        allResolved = True
+        all_resolved = True
         for i in range(len(lines)):
             if 'Proszę podać numer MSISDN' in lines[i]:
-                msisdns = msisdn_regex.findall(lines[i+1])
-                resolution, allResolved = processMsisdns(msisdns, inc)
-        if emptyInc(inc):
+                msisdns = msisdn_regex.findall(lines[i + 1])
+                resolution, all_resolved = process_msisdns(msisdns, inc)
+        if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
-        if resolution != '' and allResolved:
-            closeIncident(inc, resolution)
+        if resolution != '' and all_resolved:
+            close_incident(inc, resolution)
         print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
-def saleOfServices():
-    incidents = getIncidents(
+def sale_of_services():
+    incidents = get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
         '000_incydent/awaria/uszkodzenie',
         'OPTIPOS - OFERTA PTK',
         'SPRZEDAZ USLUG'
     )
 
-    msisdn_regex = re.compile('[0-9]{9,9}')
+    msisdn_regex = re.compile('[0-9]{9}')
     for inc in incidents:
         resolution = ''
         lines = inc['notes']
-        allResolved = True
+        all_resolved = True
         for i in range(len(lines)):
             if 'Numer telefonu klienta Orange / MSISDN' in lines[i]:
-                msisdns = msisdn_regex.findall(lines[i+1])
-                resolution, allResolved = processMsisdns(msisdns, inc)
-        if emptyInc(inc):
+                msisdns = msisdn_regex.findall(lines[i + 1])
+                resolution, all_resolved = process_msisdns(msisdns, inc)
+        if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
-        if resolution != '' and allResolved:
-            closeIncident(inc, resolution)
+        if resolution != '' and all_resolved:
+            close_incident(inc, resolution)
         print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
-def releaseResources():
-    incidents = getIncidents(
+def release_resources():
+    incidents = get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
         '000_incydent/awaria/uszkodzenie',
         'OTSA',
         'UWOLNIENIE ZASOBOW'
     )
 
-    otsa = OTSAconnection()
+    otsa = otsa_connection()
     sim_regex = re.compile('[0-9]{19,20}')
     for inc in incidents:
         sims = []
         for line in inc['notes']:
             sims.extend(sim_regex.findall(line))
 
-        allResolved = True
+        all_resolved = True
         resolution = ''
 
-        nra = NRAconnection()
+        nra = nra_connection()
         for sim in sims:
-            partialResolution = ''
-            result = checkSIM(otsa, sim)
+            partial_resolution = ''
+            result = check_sim(otsa, sim)
             result = [r for r in result if r['status'] not in ('3D', '3G')]
             if len(result) == 0:
-                simStatus = getSimStatus(nra, sim)
-                if len(simStatus) == 0:
-                    partialResolution = 'Brak karty SIM {0} w nRA. Proszę podać poprawny numer.'.format(sim)
-                    resolution = partialResolution + '\r\n'
+                sim_status = get_sim_status(nra, sim)
+                if len(sim_status) == 0:
+                    partial_resolution = 'Brak karty SIM {0} w nRA. Proszę podać poprawny numer.'.format(sim)
+                    resolution = partial_resolution + '\r\n'
                     continue
-                if simStatus['status_nra'] == simStatus['status_bscs']:
-                    if simStatus['status_nra'] in ('r', 'd', 'l', 'E') \
-                    and simStatus['status_nra'] == simStatus['status_bscs']:
-                        setSimStatusNRA(nra, sim, 'r')
-                        setSimStatusBSCS(nra, sim, 'r')
-                        setIMSIStatusBSCS(nra, simStatus['imsi'], 'r')
-                        partialResolution = 'Karta SIM {0} uwolniona.'.format(sim)
-                    elif simStatus['status_nra'] in ('a', 'B'):
-                        partialResolution = 'Karta SIM {0} aktywna. Brak możliwości odblokowania.'.format(sim)
+                if sim_status['status_nra'] == sim_status['status_bscs']:
+                    if sim_status['status_nra'] in ('r', 'd', 'l', 'E') \
+                            and sim_status['status_nra'] == sim_status['status_bscs']:
+                        set_sim_status_nra(nra, sim, 'r')
+                        set_sim_status_bscs(nra, sim, 'r')
+                        set_imsi_status_bscs(nra, sim_status['imsi'], 'r')
+                        partial_resolution = 'Karta SIM {0} uwolniona.'.format(sim)
+                    elif sim_status['status_nra'] in ('a', 'B'):
+                        partial_resolution = 'Karta SIM {0} aktywna. Brak możliwości odblokowania.'.format(sim)
                     else:
-                        allResolved = False
-                        pass # simka w dziwnym statusie i na nra
+                        all_resolved = False
+                        pass  # simka w dziwnym statusie i na nra
             else:
-                partialResolution = 'Karta SIM {0} powiązana z nieanulowaną umową {1}. Brak możliwości odblokowania.' \
-                                    'Proszę o kontakt z dealer support lub z działem reklamacji'\
+                partial_resolution = 'Karta SIM {0} powiązana z nieanulowaną umową {1}. Brak możliwości odblokowania.' \
+                                     'Proszę o kontakt z dealer support lub z działem reklamacji' \
                     .format(sim, result[0]['trans_num'])
-            if partialResolution != '':
-                resolution = resolution + '\r\n' + partialResolution
+            if partial_resolution != '':
+                resolution = resolution + '\r\n' + partial_resolution
         nra.close()
 
-        if emptyInc(inc):
+        if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
 
-        if allResolved and resolution != '':
-            closeIncident(inc, resolution)
+        if all_resolved and resolution != '':
+            close_incident(inc, resolution)
 
         print '{}: {}'.format(inc['inc'], resolution.strip())
     otsa.close()
 
 
-def problemsWithOffer():
-    incidents = getIncidents(
+def problems_with_offer():
+    incidents = get_incidents(
         'VC_BSS_MOBILE_RSW',
         '000_incydent/awaria/uszkodzenie',
         'RSW / nBUK',
@@ -182,72 +182,83 @@ def problemsWithOffer():
         resolution = ''
 
         msisdn = ''
-        msisdnInNextLine = False
-        offerName = ''
+        msisdn_in_next_line = False
+        offer_name = ''
         for line in inc['notes']:
             if 'Numer telefonu klienta Orange / MSISDN' in line:
-                msisdnInNextLine = True
+                msisdn_in_next_line = True
                 continue
-            if msisdnInNextLine:
+            if msisdn_in_next_line:
                 msisdn = line.strip()
-                msisdnInNextLine = False
+                msisdn_in_next_line = False
             if 'Proszę o dodanie oferty: ' in line:
-                offerName = line.split(': ')[1].split('.')[0]
+                offer_name = line.split(': ')[1].split('.')[0]
 
-        expirationDate = getExpirationDate(getContractData(msisdn))
-        if expirationDate != '':
-            dt = parser.parse(expirationDate)
+        expiration_date = get_expiration_date(get_contract_data(msisdn))
+        if expiration_date != '':
+            dt = parser.parse(expiration_date)
         else:
             continue
         now = datetime.now()
-        if (offerName.lower() == 'plan komórkowy' or offerName.lower() == 'internet mobilny') and (dt - now).days > 120:
+        if (offer_name.lower() == 'plan komórkowy' or offer_name.lower() == 'internet mobilny') \
+                and (dt - now).days > 120:
             resolution = 'Klient ma lojalkę do {0}. Zgodnie z konfiguracją marketingową oferta {1} ' \
                          'jest dostępna na 120 dni przed końcem lojalki, czyli klient tych wymagań nie spełnia. ' \
-                         'Brak błędu aplikacji.'.format(expirationDate, offerName)
-            closeIncident(inc, resolution)
+                         'Brak błędu aplikacji.'.format(expiration_date, offer_name)
+            close_incident(inc, resolution)
 
         print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
-def unlockAccounts():
-    incidents = getIncidents(
+def unlock_accounts():
+    incidents = get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
         '000_incydent/awaria/uszkodzenie',
         'OTSA/OPTIPOS',
         'ODBLOKOWANIE KONTA'
     )
-    otsa = OTSAconnection()
+    otsa = otsa_connection()
     for inc in incidents:
-        loginInNextLine = False
+        resolution = ''
+        login = None
+        login_in_next_line = False
         for line in inc['notes']:
             if 'Podaj login OTSA' in line:
-                loginInNextLine = True
+                login_in_next_line = True
                 continue
-            if loginInNextLine:
+            if login_in_next_line:
                 login = line.strip().lower()
                 break
         if login:
-            rowsUpdated = unlockAccount(otsa, login)
-        if rowsUpdated == 1:
-            resolution = 'Konto o loginie {} jest aktywne. Nowe hasło to: centertel.'.format(login)
-            closeIncident(inc, resolution)
+            rows_updated = unlock_account(otsa, login)
+            if rows_updated == 1:
+                resolution = 'Konto o loginie {} jest aktywne. Nowe hasło to: centertel.'.format(login)
+                close_incident(inc, resolution)
 
         print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
 if __name__ == '__main__':
+    fields = get_fields('HPD:WorkLog')
+    for f in fields:
+       print f
+
+    wi = get_work_info('INC000019550023')
+    print wi
+
+    exit(0)
 
     print "ODBLOKOWANIE IMEI"
-    unlockImeis()
+    unlock_imeis()
     print "ODBLOKOWANIE KONTA"
-    unlockAccounts()
+    unlock_accounts()
     print "AKTYWACJA KLIENTA"
-    activateCustomers()
+    activate_customers()
     print "MIGRACJA KLIENTA"
-    migrateCustomers()
+    migrate_customers()
     print "SPRZEDAZ USLUG"
-    saleOfServices()
+    sale_of_services()
     print "UWOLNIENIE ZASOBÓW"
-    releaseResources()
+    release_resources()
     print "PROBLEMY Z OFERTĄ"
-    problemsWithOffer()
+    problems_with_offer()
