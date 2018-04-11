@@ -174,6 +174,30 @@ def get_work_info(inc):
         ars.terminate()
 
 
+def add_work_info(inc, summary, notes):
+    try:
+        ars = ARS(
+            server=server, port=port,
+            user=user, password=password
+        )
+
+        ars.create(
+            schema='HPD:WorkLog',
+            entry_values={
+                'Work Log Type': 'General Information',
+                'Incident Number': inc,
+                'Description': summary,
+                'Detailed Description': notes
+            }
+        )
+
+    except ARSError as e:
+        print('ERROR: {}'.format(e))
+        return e
+    finally:
+        ars.terminate()
+
+
 def get_fields(schema):
     try:
         ars = ARS(

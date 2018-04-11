@@ -9,7 +9,7 @@ from muchomor import unlock_imei
 from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
-from remedy import get_incidents, close_incident, is_empty, get_work_info, get_fields
+from remedy import get_incidents, close_incident, is_empty, get_work_info, get_fields, add_work_info
 
 
 def unlock_imeis():
@@ -239,14 +239,6 @@ def unlock_accounts():
 
 
 if __name__ == '__main__':
-    fields = get_fields('HPD:WorkLog')
-    for f in fields:
-       print f
-
-    wi = get_work_info('INC000019550023')
-    print wi
-
-    exit(0)
 
     print "ODBLOKOWANIE IMEI"
     unlock_imeis()
