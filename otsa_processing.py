@@ -3,7 +3,7 @@ from bscs import getCustomerId, BSCSconnection, setTransNo
 from om import getOrders
 from optipos import getCartStatus, OPTIconnection, setCartStatus
 from otsa import searchMsisdn, updateTransaction, updateContract, fix90100, fixCSC185, searchCart, OTSAconnection, \
-    fixPesel, fixCSC178, fixAAC
+    fixPesel, fixCSC178, fixAAC, fixCSC598
 from remedy import reassignIncident, updateSummary
 
 
@@ -50,7 +50,8 @@ def processMsisdns(msisdns, inc):
 
 def toCancel(inc):
     for line in inc['notes']:
-        if 'anulowa' in line.lower():
+        line = line.lower()
+        if 'o anulowa' in line or 'proszę anulować' in line:
             return True
     return False
 
@@ -64,7 +65,15 @@ def process2Y(otsa, contract, inc):
         resolution = 'Umowa ' + contract['trans_num'] + ' anulowana.'
         return resolution
 
-    if inc['summary'] == 'ponowione':
+    for line in inc['notes']:
+        line = line.lower()
+        if 'wstrzym' in line and 'po stronie om' in line:
+            resolution = 'Umowa ' + contract['trans_num'] + ' wstrzymana po stronie OM. ' \
+                                                            'Jest to poprawny biznesowo status. Proszę anulować lub zatwierdzić. ' \
+                                                            'W razie kłopotów proszę o kontakt z Dealer Support'
+            return resolution
+
+    if 'ponowione' in inc['summary']:
         resolution = 'Umowa ' + contract['trans_num'] + ' wstrzymana po stronie OM. ' \
                      'Jest to poprawny biznesowo status. Proszę anulować lub zatwierdzić. ' \
                      'W razie kłopotów proszę o kontakt z Dealer Support'
@@ -123,6 +132,14 @@ def process3C(otsa, contract, inc):
     elif contract['ncs_error_desc'] is not None and 'CSC.178' in contract['ncs_error_desc']:
         fixCSC178(otsa, contract['cart_code'])
         resolution = ''
+    elif contract['ncs_error_desc'] is not None and 'CSC.598' in contract['ncs_error_desc']:
+        fixCSC598(otsa, contract['trans_code'])
+        resolution = ''
+    elif contract['ncs_error_desc'] is not None and 'EDL.33' in contract['ncs_error_desc']:
+        updateTransaction(otsa, contract['trans_code'], '3A')
+        updateContract(otsa, contract['trans_code'], '3A')
+        resolution = 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.\n'
+        return resolution
     elif contract['ncs_error_desc'] is not None and 'ACCOUNT ALREADY CREATED' in contract['ncs_error_desc']:
         bscs = BSCSconnection()
         customer_id = getCustomerId(bscs, contract['custcode'])
@@ -151,11 +168,19 @@ def process1F(otsa, contract, inc):
     if contract['cart_code'] != '':
         cart = searchCart(otsa, contract['cart_code'])
         hasCA = False
+        CA = None
         for trans in cart:
             if trans['trans_type'] == 'CA':
                 hasCA = True
+                CA = trans
         if hasCA:
-            resolution = ''  # TODO
+            if CA['status'] == '3A':
+                resolution = ''
+                for trans in [t for t in cart if t['trans_type'] != 'CA']:
+                    if trans['status'] in ('1F', '3C'):
+                        resolution += process3C(otsa, trans, inc)
+            else:
+                pass # TODO
         else:
             resolution = process3C(otsa, contract, inc)
     else:
@@ -180,10 +205,17 @@ def process1H(otsa, contract, inc):
 
 def process3A(otsa, contract, inc):
     resolution = ''
-    if contract['status'] == '3A' and 'ponowione' in inc['summary']:
+    if contract['status'] == '3A' and ('ponowione' in inc['summary'] or
+                                           (contract['ncs_error_desc'] is not None and 'Timeout' in contract['ncs_error_desc']))\
+            and contract['trans_num'] is not None:
         resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.\n'
+        return resolution
     for line in inc['notes']:
-        if 'koszyk' in line:
+        line = line.lower()
+        if 'wstrzym' in line and 'po stronie om' in line:
+            resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.\n'
+            return resolution
+        if 'koszyk' in line and 'oraz numer koszyka' not in line:
             opti = OPTIconnection()
             if contract['cart_code'] is not None:
                 cartStatus = getCartStatus(opti, contract['cart_code'])
@@ -209,7 +241,7 @@ def process1C(otsa, contract, inc):
 
 
 def process8B(otsa, contract, inc):
-    process1C(otsa, contract, inc)
+    return process1C(otsa, contract, inc)
 
 
 def process1D(otsa, contract, inc):
@@ -218,5 +250,9 @@ def process1D(otsa, contract, inc):
     if not toCancel(inc):
         updateTransaction(otsa, contract['trans_code'], '1B')
         updateSummary(inc, 'ponowione')
+    else:
+        updateTransaction(otsa, contract['trans_code'], '3D')
+        updateContract(otsa, contract['trans_code'], '3D')
+        resolution = 'Umowa ' + contract['trans_num'] + ' anulowana.'
 
     return resolution

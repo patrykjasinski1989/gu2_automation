@@ -75,12 +75,15 @@ def closeIncident(inc, resolution):
 
 def reassignIncident(inc, group):
 
-    if '_' not in group:
+    if '_' not in group and 'Servicedesk' not in group:
         group_name = 'VC_BSS_MOBILE_' + group.upper()
+    else:
+        group_name = group
 
     group_ids = {'VC_BSS_MOBILE_OM': 'SGP000000024567',
                  'VC_BSS_MOBILE_NRA': 'SGP000000024570',
-                 'VC_BSS_MOBILE_OV': 'SGP000000024585'}
+                 'VC_BSS_MOBILE_OV': 'SGP000000024585',
+                 'Servicedesk - KONTA': 'SGP000000040569'}
 
     try:
         ars = ARS(

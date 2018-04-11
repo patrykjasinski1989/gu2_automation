@@ -104,6 +104,16 @@ def fixCSC178(con, cart_code):
     return fixCSC185(con, cart_code)
 
 
+def fixCSC598(con, trans_code):
+    cur = con.cursor()
+    cur.execute('insert into ptk_otsa_trans_address_type '
+                'select distinct address_code, 1 from ptk_otsa_trans_address '
+                'where trans_code = \'' + str(trans_code) + '\'')
+    con.commit()
+    cur.close()
+    return cur.rowcount
+
+
 def fixPesel(con, trans_code):
     cur = con.cursor()
     cur.execute('update ptk_otsa_transaction set comptaxno = \'\', pers_comptaxno = \'\''
@@ -157,3 +167,18 @@ def updateCart(con, trans_code, cart_code):
         con.rollback()
     cur.close()
     return cur.rowcount
+
+
+def unlockAccount(con, login):
+    cur = con.cursor()
+    cur.execute('UPDATE ptk_otsa_user u SET u.password =  \'xhjt1p6C4H\', u.status = \'A\', '
+                'u.Last_Password_Change= sysdate, u.key_active =\'Y\', u.prev_failed_logins = u.failed_logins, '
+                'u.failed_logins = 0, u.last_login = sysdate Where U.Login = \'' + login + '\'')
+    if cur.rowcount == 1:
+        con.commit()
+    else:
+        con.rollback()
+    cur.close()
+    return cur.rowcount
+
+

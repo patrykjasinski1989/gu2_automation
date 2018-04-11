@@ -7,9 +7,9 @@ from dateutil import parser
 from eai import getExpirationDate, getContractData
 from muchomor import unlockImei
 from nra import getSimStatus, NRAconnection, setSimStatusNRA, setSimStatusBSCS, setIMSIStatusBSCS
-from otsa import OTSAconnection, checkSIM
+from otsa import OTSAconnection, checkSIM, unlockAccount
 from otsa_processing import processMsisdns
-from remedy import getIncidents, closeIncident, emptyInc
+from remedy import getIncidents, closeIncident, emptyInc, getSchemas, getFields, reassignIncident
 
 
 def unlockImeis():
@@ -35,9 +35,9 @@ def unlockImeis():
                 resolution += unlockImei(imei.upper()) + '\n'
         if emptyInc(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
-        if resolution != '' and resolution != '\n':
+        if resolution.strip() != '':
             closeIncident(inc, resolution)
-        print '{}: {}'.format(inc['inc'], resolution)
+        print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
 def activateCustomers():
@@ -61,7 +61,7 @@ def activateCustomers():
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
         if resolution != '' and allResolved:
             closeIncident(inc, resolution)
-        print '{}: {}'.format(inc['inc'], resolution)
+        print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
 def migrateCustomers():
@@ -85,7 +85,31 @@ def migrateCustomers():
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
         if resolution != '' and allResolved:
             closeIncident(inc, resolution)
-        print '{}: {}'.format(inc['inc'], resolution)
+        print '{}: {}'.format(inc['inc'], resolution.strip())
+
+
+def saleOfServices():
+    incidents = getIncidents(
+        'VC_BSS_MOBILE_OPTIPOS',
+        '000_incydent/awaria/uszkodzenie',
+        'OPTIPOS - OFERTA PTK',
+        'SPRZEDAZ USLUG'
+    )
+
+    msisdn_regex = re.compile('[0-9]{9,9}')
+    for inc in incidents:
+        resolution = ''
+        lines = inc['notes']
+        allResolved = True
+        for i in range(len(lines)):
+            if 'Numer telefonu klienta Orange / MSISDN' in lines[i]:
+                msisdns = msisdn_regex.findall(lines[i+1])
+                resolution, allResolved = processMsisdns(msisdns, inc)
+        if emptyInc(inc):
+            resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
+        if resolution != '' and allResolved:
+            closeIncident(inc, resolution)
+        print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
 def releaseResources():
@@ -143,7 +167,7 @@ def releaseResources():
         if allResolved and resolution != '':
             closeIncident(inc, resolution)
 
-        print '{}: {}'.format(inc['inc'], resolution)
+        print '{}: {}'.format(inc['inc'], resolution.strip())
     otsa.close()
 
 
@@ -157,6 +181,7 @@ def problemsWithOffer():
     for inc in incidents:
         resolution = ''
 
+        msisdn = ''
         msisdnInNextLine = False
         offerName = ''
         for line in inc['notes']:
@@ -181,18 +206,47 @@ def problemsWithOffer():
                          'Brak błędu aplikacji.'.format(expirationDate, offerName)
             closeIncident(inc, resolution)
 
-        print '{}: {}'.format(inc['inc'], resolution)
+        print '{}: {}'.format(inc['inc'], resolution.strip())
 
+
+def unlockAccounts():
+    incidents = getIncidents(
+        'VC_BSS_MOBILE_OPTIPOS',
+        '000_incydent/awaria/uszkodzenie',
+        'OTSA/OPTIPOS',
+        'ODBLOKOWANIE KONTA'
+    )
+    otsa = OTSAconnection()
+    for inc in incidents:
+        loginInNextLine = False
+        for line in inc['notes']:
+            if 'Podaj login OTSA' in line:
+                loginInNextLine = True
+                continue
+            if loginInNextLine:
+                login = line.strip().lower()
+                break
+        if login:
+            rowsUpdated = unlockAccount(otsa, login)
+        if rowsUpdated == 1:
+            resolution = 'Konto o loginie {} jest aktywne. Nowe hasło to: centertel.'.format(login)
+            closeIncident(inc, resolution)
+
+        print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
 if __name__ == '__main__':
 
     print "ODBLOKOWANIE IMEI"
     unlockImeis()
+    print "ODBLOKOWANIE KONTA"
+    unlockAccounts()
     print "AKTYWACJA KLIENTA"
     activateCustomers()
     print "MIGRACJA KLIENTA"
     migrateCustomers()
+    print "SPRZEDAZ USLUG"
+    saleOfServices()
     print "UWOLNIENIE ZASOBÓW"
     releaseResources()
     print "PROBLEMY Z OFERTĄ"

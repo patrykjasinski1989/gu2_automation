@@ -65,6 +65,8 @@ def unlockImei(imei):
                    'lub z centralą agenta w przypadku salonów agencyjnych.'
     elif 'Terminal odblokowany' in result:
         resolution = 'Terminal ' + imei + ' odblokowany.'
+    elif 'Nie znaleziono terminala' in result:
+        resolution = ''
     else:
         resolution = result
 

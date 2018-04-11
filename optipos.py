@@ -5,7 +5,7 @@ import config
 
 
 def OPTIconnection():
-    return cx_Oracle.connect('{}/{}@{}'.format(config.opti['user'], config.opti['password'], config.opti['server']))
+    return cx_Oracle.connect(user=config.opti['user'], password=config.opti['password'], dsn=config.opti['server'])
 
 
 def getCartStatus(con, cartId):
