@@ -180,7 +180,7 @@ def process1F(otsa, contract, inc):
                     if trans['status'] in ('1F', '3C'):
                         resolution += process3C(otsa, trans, inc)
             else:
-                pass # TODO
+                pass # TODO DDDDDDDDUPA
         else:
             resolution = process3C(otsa, contract, inc)
     else:
