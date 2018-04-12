@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from pyremedy import ARS, ARSError
-
+from datetime import datetime, timedelta
 import config
 
 server = config.remedy['server']
@@ -60,6 +60,34 @@ def close_incident(inc, resolution):
             entry_values={
                 'Status': 'Resolved',
                 'Status_Reason': 'Rozwiązane',
+                'Assignee': 'PATRYK JASIŃSKI',
+                'Assignee Login ID': 'jasinpa4',
+                'Resolution': resolution
+            }
+        )
+
+    except ARSError as e:
+        print('ERROR: {}'.format(e))
+        return e
+    finally:
+        ars.terminate()
+
+
+def hold_incident(inc, resolution):
+    try:
+        ars = ARS(
+            server=server, port=port,
+            user=user, password=password
+        )
+
+        ars.update(
+            schema='HPD:Help Desk Classic',
+            entry_id=inc['id'],
+            entry_values={
+                'Status': 'Pending',
+                'Status_Reason': 'Requester Information',
+                'Estimated Resolution Date': datetime(2018, 4, 14, 14, 4, 48), # TODO doesn't work, is null
+                    #(datetime.now() + timedelta((5-datetime.now().weekday()) % 7)).strftime("%Y-%m-%d %H:%M:%S"),
                 'Assignee': 'PATRYK JASIŃSKI',
                 'Assignee Login ID': 'jasinpa4',
                 'Resolution': resolution
@@ -149,7 +177,7 @@ def get_work_info(inc):
         entries = ars.query(
             schema='HPD:WorkLog',
             qualifier=""" 'Incident Number' = "%s" """ % inc,
-            fields=['Description', 'Detailed Description', 'Submitter', 'Submit Date']
+            fields=['Description', 'Detailed Description', 'Submitter', 'Submit Date', 'Number of Attachments']
         )
 
         incidents = []
@@ -163,7 +191,10 @@ def get_work_info(inc):
                     submitter = value
                 elif field == 'Submit Date':
                     submit_date = value
-            incidents.append({'summary': summary, 'notes': notes, 'submitter': submitter, 'submit_date': submit_date})
+                elif field == 'Number of Attachments':
+                    attachments_cnt = value
+            incidents.append({'summary': summary, 'notes': notes, 'submitter': submitter, 'submit_date': submit_date,
+                              'attachments_cnt': attachments_cnt})
 
         return incidents
 
@@ -174,7 +205,7 @@ def get_work_info(inc):
         ars.terminate()
 
 
-def add_work_info(inc, summary, notes):
+def add_work_info(inc, wi_summary, wi_notes):
     try:
         ars = ARS(
             server=server, port=port,
@@ -185,9 +216,9 @@ def add_work_info(inc, summary, notes):
             schema='HPD:WorkLog',
             entry_values={
                 'Work Log Type': 'General Information',
-                'Incident Number': inc,
-                'Description': summary,
-                'Detailed Description': notes
+                'Incident Number': inc['inc'],
+                'Description': wi_summary,
+                'Detailed Description': wi_notes
             }
         )
 
@@ -236,3 +267,10 @@ def is_empty(inc):
                 return True
     else:
         return False
+
+
+def has_attachment(work_info):
+    for entry in work_info:
+        if entry['attachments_cnt']:
+            return True
+    return False

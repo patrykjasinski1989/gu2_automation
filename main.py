@@ -9,7 +9,8 @@ from muchomor import unlock_imei
 from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
-from remedy import get_incidents, close_incident, is_empty, get_work_info, get_fields, add_work_info
+from remedy import get_incidents, close_incident, is_empty, get_work_info, get_fields, add_work_info, has_attachment, \
+    hold_incident
 
 
 def unlock_imeis():

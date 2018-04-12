@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+
 from bscs import get_customer_id, bscs_connection, set_trans_no
 from om import get_orders
 from optipos import get_cart_status, opti_connection, set_cart_status
 from otsa import search_msisdn, update_transaction, update_contract, fix_90100, fix_csc185, search_cart, \
     otsa_connection, fix_pesel, fix_csc178, fix_aac, fix_csc598
-from remedy import reassign_incident, update_summary
+from remedy import reassign_incident, update_summary, add_work_info
 
 
 def process_msisdns(msisdns, inc):
@@ -103,6 +104,7 @@ def process_2b(otsa, contract, inc):
     if 'ponowione' in inc['summary']:
         resolution = 'Umowa ' + contract['trans_num'] + ' przekazana do realizacji.'
     else:
+        add_work_info(inc, 'VC_OPTIPOS', 'Umowa w trakcie realizacji. Prośba o weryfikację w OM.')
         reassign_incident(inc, 'OM')
         resolution = ''
     return resolution
