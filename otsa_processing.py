@@ -4,7 +4,7 @@ from bscs import get_customer_id, bscs_connection, set_trans_no
 from om import get_orders
 from optipos import get_cart_status, opti_connection, set_cart_status
 from otsa import search_msisdn, update_transaction, update_contract, fix_90100, fix_csc185, search_cart, \
-    otsa_connection, fix_pesel, fix_csc178, fix_aac, fix_csc598
+    otsa_connection, fix_pesel, fix_csc178, fix_aac, fix_csc598, fix_csc598_cart
 from remedy import reassign_incident, update_summary, add_work_info
 
 
@@ -136,7 +136,9 @@ def process_3c(otsa, contract, inc):
         fix_csc178(otsa, contract['cart_code'])
         resolution = ''
     elif contract['ncs_error_desc'] is not None and 'CSC.598' in contract['ncs_error_desc']:
-        fix_csc598(otsa, contract['trans_code'])
+        cart = search_cart(otsa, contract['cart_code'])
+        fix_csc598_cart(otsa, cart)
+        #fix_csc598(otsa, contract['trans_code'])
         resolution = ''
     elif contract['ncs_error_desc'] is not None and 'EDL.33' in contract['ncs_error_desc']:
         update_transaction(otsa, contract['trans_code'], '3A')
@@ -162,6 +164,7 @@ def process_3c(otsa, contract, inc):
         resolution = ''
     else:
         resolution = ''
+
     update_transaction(otsa, contract['trans_code'], '1B')
     update_summary(inc, 'ponowione')
     return resolution
@@ -196,10 +199,17 @@ def process_1h(otsa, contract, inc):
     if contract['cart_code'] != '':
         resolution = ''
         cart = search_cart(otsa, contract['cart_code'])
+        ca_processed = False
         for trans in cart:
-            if 'ponowione' in inc['summary'] and trans['process_error'] is None:
+            if trans['trans_type'] == 'CA' and trans['status'] == '3A':
+                ca_processed = True
+        for trans in cart:
+            if 'ponowione' in inc['summary'] and trans['process_error'] is None and trans['nation'] != 18:
                 fix_pesel(otsa, trans['trans_code'])
-            if trans['trans_type'] == 'CA' and trans['status'] == '3C':
+            if trans['status'] == '3C' and trans['trans_type'] == 'CA':
+                resolution = process_3c(otsa, trans, inc)
+                update_summary(inc, 'ponowione')
+            elif trans['status'] == '3C' and ca_processed:
                 resolution = process_3c(otsa, trans, inc)
                 update_summary(inc, 'ponowione')
     else:

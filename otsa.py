@@ -36,8 +36,8 @@ def search_cart(con, cart_code):
     try:
         cur.execute('select t.cart_code, t.trans_code, t.status, t.ncs_trans_num, t.om_order_id, '
                     't.process_error, t.ncs_error_desc, t.trans_type, t.author_user_code, t.trans_num, t.create_date, '
-                    'crm_customer_id, t.custcode from ptk_otsa_transaction t where t.cart_code = \'' +
-                    str(cart_code) + '\'')
+                    'crm_customer_id, t.custcode, t.nation '
+                    'from ptk_otsa_transaction t where t.cart_code = \'' + str(cart_code) + '\'')
         rows = cur.fetchall()
     except:
         cur.close()
@@ -49,7 +49,7 @@ def search_cart(con, cart_code):
                           'ncs_trans_num': row[3], 'om_order_id': row[4], 'process_error': row[5],
                           'ncs_error_desc': row[6], 'trans_type': row[7], 'author_user_code': row[8],
                           'trans_num': row[9], 'create_date': row[10], 'crm_customer_id': row[11],
-                          'custcode': row[12]})
+                          'custcode': row[12], 'nation': row[13]})
     return dict_rows
 
 
@@ -112,6 +112,11 @@ def fix_csc598(con, trans_code):
     con.commit()
     cur.close()
     return cur.rowcount
+
+
+def fix_csc598_cart(con, cart):
+    for trans in cart:
+        fix_csc598(con, trans['trans_code'])
 
 
 def fix_pesel(con, trans_code):
