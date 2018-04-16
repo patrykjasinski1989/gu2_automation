@@ -176,7 +176,7 @@ def get_work_info(inc):
 
         entries = ars.query(
             schema='HPD:WorkLog',
-            qualifier=""" 'Incident Number' = "%s" """ % inc,
+            qualifier=""" 'Incident Number' = "%s" """ % inc['inc'],
             fields=['Description', 'Detailed Description', 'Submitter', 'Submit Date', 'Number of Attachments']
         )
 

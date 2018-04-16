@@ -10,7 +10,7 @@ from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_stat
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, get_work_info, get_fields, add_work_info, has_attachment, \
-    hold_incident
+    hold_incident, reassign_incident
 
 
 def unlock_imeis():
@@ -137,6 +137,7 @@ def release_resources():
             result = check_sim(otsa, sim)
             result = [r for r in result if r['status'] not in ('3D', '3G')]
             if len(result) == 0:
+                wi_notes = ''
                 sim_status = get_sim_status(nra, sim)
                 if len(sim_status) == 0:
                     partial_resolution = 'Brak karty SIM {0} w nRA. Proszę podać poprawny numer.'.format(sim)
@@ -153,7 +154,10 @@ def release_resources():
                         partial_resolution = 'Karta SIM {0} aktywna. Brak możliwości odblokowania.'.format(sim)
                     else:
                         all_resolved = False
-                        pass  # simka w dziwnym statusie i na nra
+                        wi_notes += 'Karta SIM {} w statusie {}.'.format(sim, sim_status)
+                if wi_notes:
+                    add_work_info(inc, 'VC_OPTIPOS', wi_notes)
+                    reassign_incident(inc, 'NRA')
             else:
                 partial_resolution = 'Karta SIM {0} powiązana z nieanulowaną umową {1}. Brak możliwości odblokowania.' \
                                      'Proszę o kontakt z dealer support lub z działem reklamacji' \
@@ -218,10 +222,19 @@ def unlock_accounts():
         'OTSA/OPTIPOS',
         'ODBLOKOWANIE KONTA'
     )
+    incidents += get_incidents(
+        'VC_BSS_MOBILE_OPTIPOS',
+        '000_wniosek o dostęp/instalację/dostarczenie',
+        'OTSA/OPTIPOS',
+        'OKI i SOHO - AKTYWACJA KONTA'
+    )
+
     otsa = otsa_connection()
+
     for inc in incidents:
         resolution = ''
         login = None
+        # looking for login in incident description
         login_in_next_line = False
         for line in inc['notes']:
             if 'Podaj login OTSA' in line:
@@ -230,6 +243,13 @@ def unlock_accounts():
             if login_in_next_line:
                 login = line.strip().lower()
                 break
+        # login not found, looking in work info
+        if not login:
+            wi = get_work_info(inc)
+            for entry in wi:
+                if 'SD' in entry['summary'] and 'Prośba o zdjęcie daty logowania' in entry['notes'][0]:
+                    login = entry['notes'][0].split()[-1]
+        # unlock account if login found
         if login:
             rows_updated = unlock_account(otsa, login)
             if rows_updated == 1:
