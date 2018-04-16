@@ -41,56 +41,20 @@ def unlock_imeis():
         print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
-def activate_customers():
+def process_transactions():
     incidents = get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
         '000_incydent/awaria/uszkodzenie',
         'OPTIPOS - OFERTA PTK',
         'AKTYWACJA KLIENTA'
     )
-
-    msisdn_regex = re.compile('[0-9]{9}')
-    for inc in incidents:
-        resolution = ''
-        lines = inc['notes']
-        all_resolved = True
-        for i in range(len(lines)):
-            if 'Proszę podać numer MSISDN' in lines[i]:
-                msisdns = msisdn_regex.findall(lines[i + 1])
-                resolution, all_resolved = process_msisdns(msisdns, inc)
-        if is_empty(inc):
-            resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
-        if resolution != '' and all_resolved:
-            close_incident(inc, resolution)
-        print '{}: {}'.format(inc['inc'], resolution.strip())
-
-
-def migrate_customers():
-    incidents = get_incidents(
+    incidents += get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
         '000_incydent/awaria/uszkodzenie',
         'OPTIPOS - OFERTA PTK',
         'MIGRACJA KLIENTA'
     )
-
-    msisdn_regex = re.compile('[0-9]{9}')
-    for inc in incidents:
-        resolution = ''
-        lines = inc['notes']
-        all_resolved = True
-        for i in range(len(lines)):
-            if 'Proszę podać numer MSISDN' in lines[i]:
-                msisdns = msisdn_regex.findall(lines[i + 1])
-                resolution, all_resolved = process_msisdns(msisdns, inc)
-        if is_empty(inc):
-            resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
-        if resolution != '' and all_resolved:
-            close_incident(inc, resolution)
-        print '{}: {}'.format(inc['inc'], resolution.strip())
-
-
-def sale_of_services():
-    incidents = get_incidents(
+    incidents += get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
         '000_incydent/awaria/uszkodzenie',
         'OPTIPOS - OFERTA PTK',
@@ -103,13 +67,14 @@ def sale_of_services():
         lines = inc['notes']
         all_resolved = True
         for i in range(len(lines)):
-            if 'Numer telefonu klienta Orange / MSISDN' in lines[i]:
+            if 'Proszę podać numer MSISDN' in lines[i] or 'Numer telefonu klienta Orange / MSISDN' in lines[i]:
                 msisdns = msisdn_regex.findall(lines[i + 1])
                 resolution, all_resolved = process_msisdns(msisdns, inc)
         if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
         if resolution != '' and all_resolved:
             close_incident(inc, resolution)
+
         print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
@@ -265,12 +230,8 @@ if __name__ == '__main__':
     unlock_imeis()
     print "ODBLOKOWANIE KONTA"
     unlock_accounts()
-    print "AKTYWACJA KLIENTA"
-    activate_customers()
-    print "MIGRACJA KLIENTA"
-    migrate_customers()
-    print "SPRZEDAZ USLUG"
-    sale_of_services()
+    print "AKTYWACJA KLIENTA/MIGRACJA KLIENTA/SPRZEDAŻ USŁUG"
+    process_transactions()
     print "UWOLNIENIE ZASOBÓW"
     release_resources()
     print "PROBLEMY Z OFERTĄ"
