@@ -106,9 +106,12 @@ def fix_csc178(con, cart_code):
 
 def fix_csc598(con, trans_code):
     cur = con.cursor()
-    cur.execute('insert into ptk_otsa_trans_address_type '
-                'select distinct address_code, 1 from ptk_otsa_trans_address '
-                'where trans_code = \'' + str(trans_code) + '\'')
+    try:
+        cur.execute('insert into ptk_otsa_trans_address_type '
+                    'select distinct address_code, 1 from ptk_otsa_trans_address '
+                    'where trans_code = \'' + str(trans_code) + '\'')
+    except cx_Oracle.IntegrityError:
+        pass
     con.commit()
     cur.close()
     return cur.rowcount
