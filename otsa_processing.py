@@ -136,8 +136,11 @@ def process_3c(otsa, contract, inc):
         fix_csc178(otsa, contract['cart_code'])
         resolution = ''
     elif contract['ncs_error_desc'] is not None and 'CSC.598' in contract['ncs_error_desc']:
-        cart = search_cart(otsa, contract['cart_code'])
-        fix_csc598_cart(otsa, cart)
+        if not contract['cart_code']:
+            fix_csc598(otsa, contract['trans_code'])
+        else:
+            cart = search_cart(otsa, contract['cart_code'])
+            fix_csc598_cart(otsa, cart)
         resolution = ''
     elif contract['ncs_error_desc'] is not None and 'EDL.33' in contract['ncs_error_desc']:
         update_transaction(otsa, contract['trans_code'], '3A')
