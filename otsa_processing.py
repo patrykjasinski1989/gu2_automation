@@ -11,6 +11,7 @@ from remedy import reassign_incident, update_summary, add_work_info
 def process_msisdns(msisdns, inc):
     otsa = otsa_connection()
     resolution = ''
+    work_info = ''
     all_resolved = True
     for msisdn in msisdns:
         contracts = search_msisdn(otsa, msisdn)
@@ -18,10 +19,11 @@ def process_msisdns(msisdns, inc):
                      if (contract['status'] not in ['9', '3D', '3G']
                          or (contract['status'] == '3A' and contract['trans_type'] not in ['MNP1', 'PRPS']))]
         for contract in contracts:
+            partial_wi = ''
             if contract['status'] == '2Y':
                 partial_resolution = process_2y(otsa, contract, inc)
             elif contract['status'] == '2B':
-                partial_resolution = process_2b(otsa, contract, inc)
+                partial_resolution, partial_wi = process_2b(otsa, contract, inc)
             elif contract['status'] == '3C':
                 partial_resolution = process_3c(otsa, contract, inc)
             elif contract['status'] == '1F':
@@ -43,6 +45,10 @@ def process_msisdns(msisdns, inc):
                 all_resolved = False
 
             resolution = resolution + partial_resolution + '\n'
+            work_info = work_info + partial_wi + '\n'
+
+    if work_info.strip():
+        add_work_info(inc, 'VC_OPTIPOS', work_info)
 
     otsa.close()
     return resolution, all_resolved
@@ -109,13 +115,15 @@ def process_2y(otsa, contract, inc):
 
 def process_2b(otsa, contract, inc):
     _ = otsa
+    wi = ''
     if 'ponowione' in inc['summary']:
         resolution = 'Umowa ' + contract['trans_num'] + ' przekazana do realizacji.'
-    else:  # TODO Umowy TLS (trans_type like T%) do sprawdzenia w ML
-        add_work_info(inc, 'VC_OPTIPOS', 'Umowa w trakcie realizacji. Prośba o weryfikację w OM.')
+    else:  # TODO Umowy TLS (trans_type like 'T%') do sprawdzenia w ML
+        wi += 'Umowa {} (ncs_trans_num: {}, om_order_id: {}) w trakcie realizacji. Prośba o weryfikację w OM.'\
+            .format(contract['trans_num'], contract['ncs_trans_num'], contract['om_order_id'])
         reassign_incident(inc, 'OM')
         resolution = ''
-    return resolution
+    return resolution, wi
 
 
 def process_3c(otsa, contract, inc):
@@ -153,7 +161,7 @@ def process_3c(otsa, contract, inc):
     elif contract['ncs_error_desc'] is not None and 'EDL.33' in contract['ncs_error_desc']:
         update_transaction(otsa, contract['trans_code'], '3A')
         update_contract(otsa, contract['trans_code'], '3A')
-        resolution = 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.\n'
+        resolution = 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.'
         return resolution
     elif contract['ncs_error_desc'] is not None and 'ACCOUNT ALREADY CREATED' in contract['ncs_error_desc']:
         bscs = bscs_connection()
@@ -233,13 +241,13 @@ def process_3a(otsa, contract, inc):
     if contract['status'] == '3A' and contract['trans_num'] and \
             ('ponowione' in inc['summary'] or
                  (contract['ncs_error_desc'] is not None and 'Timeout' in contract['ncs_error_desc'])):
-        resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.\n'
+        resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.'
         return resolution
     for line in inc['notes']:
         line = line.lower()
         if ('wstrzym' in line and 'po stronie om' in line) \
                 or to_process(inc) and contract['trans_type'] != 'CA':
-            resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.\n'
+            resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.'
             return resolution
         elif 'koszyk' in line and 'zatwierd' in line and 'oraz numer koszyka' not in line:
             opti = opti_connection()
@@ -247,7 +255,7 @@ def process_3a(otsa, contract, inc):
                 cart_status = get_cart_status(opti, contract['cart_code'])
                 if cart_status not in ['3A', '3D']:
                     set_cart_status(opti, contract['cart_code'], '3A')
-                    resolution += 'Koszyk {} zamknięty.\n'.format(contract['cart_code'])
+                    resolution += 'Koszyk {} zamknięty.'.format(contract['cart_code'])
                     opti.close()
                     return resolution
     else:
