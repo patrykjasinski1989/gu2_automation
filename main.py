@@ -68,13 +68,13 @@ def process_transactions():
         all_resolved = True
         for i in range(len(lines)):
             if 'Proszę podać numer MSISDN' in lines[i] or 'Numer telefonu klienta Orange / MSISDN' in lines[i]:
-                msisdns = msisdn_regex.findall(lines[i + 1])
+                msisdns = msisdn_regex.findall(lines[i+1])
+                msisdns += msisdn_regex.findall(lines[i+2])
                 resolution, all_resolved = process_msisdns(msisdns, inc)
         if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
         if resolution != '' and all_resolved:
             close_incident(inc, resolution)
-
         print '{}: {}'.format(inc['inc'], resolution.strip())
 
 
@@ -187,12 +187,14 @@ def unlock_accounts():
         'OTSA/OPTIPOS',
         'ODBLOKOWANIE KONTA'
     )
-    incidents += get_incidents(
-        'VC_BSS_MOBILE_OPTIPOS',
-        '000_wniosek o dostęp/instalację/dostarczenie',
-        'OTSA/OPTIPOS',
-        'OKI i SOHO - AKTYWACJA KONTA'
-    )
+    sd_tiers = ['OKI i SOHO - AKTYWACJA KONTA', '[DETAL PTK] KKB,ADT - AKTYWACJA KONTA']
+    for tier3 in sd_tiers:
+        incidents += get_incidents(
+            'VC_BSS_MOBILE_OPTIPOS',
+            '000_wniosek o dostęp/instalację/dostarczenie',
+            'OTSA/OPTIPOS',
+            tier3
+        )
 
     otsa = otsa_connection()
 
@@ -222,6 +224,8 @@ def unlock_accounts():
                 close_incident(inc, resolution)
 
         print '{}: {}'.format(inc['inc'], resolution.strip())
+
+    otsa.close()
 
 
 if __name__ == '__main__':

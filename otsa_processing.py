@@ -14,8 +14,6 @@ def process_msisdns(msisdns, inc):
     all_resolved = True
     for msisdn in msisdns:
         contracts = search_msisdn(otsa, msisdn)
-        for contract in contracts:
-            print contract
         contracts = [contract for contract in contracts
                      if (contract['status'] not in ['9', '3D', '3G']
                          or (contract['status'] == '3A' and contract['trans_type'] not in ['MNP1', 'PRPS']))]
@@ -53,7 +51,16 @@ def process_msisdns(msisdns, inc):
 def to_cancel(inc):
     for line in inc['notes']:
         line = line.lower()
-        if 'o anulowa' in line or 'proszę anulować' in line:
+        if 'proszę o anul' in line or 'proszę anulować' in line:
+            return True
+    return False
+
+
+def to_process(inc):
+    for line in inc['notes']:
+        line = line.lower()
+        if 'proszę zatw' in line or 'proszę o zatw' in line \
+                or 'proszę przeproces' in line or 'proszę o przeproces' in line:
             return True
     return False
 
@@ -101,9 +108,10 @@ def process_2y(otsa, contract, inc):
 
 
 def process_2b(otsa, contract, inc):
+    _ = otsa
     if 'ponowione' in inc['summary']:
         resolution = 'Umowa ' + contract['trans_num'] + ' przekazana do realizacji.'
-    else:
+    else:  # TODO Umowy TLS (trans_type like T%) do sprawdzenia w ML
         add_work_info(inc, 'VC_OPTIPOS', 'Umowa w trakcie realizacji. Prośba o weryfikację w OM.')
         reassign_incident(inc, 'OM')
         resolution = ''
@@ -189,7 +197,7 @@ def process_1f(otsa, contract, inc):
                     if trans['status'] in ('1F', '3C'):
                         resolution += process_3c(otsa, trans, inc)
             else:
-                pass  # TODO
+                pass  # TODO jak się trafi przypadek testowy...
         else:
             resolution = process_3c(otsa, contract, inc)
     else:
@@ -220,19 +228,20 @@ def process_1h(otsa, contract, inc):
 
 
 def process_3a(otsa, contract, inc):
+    _ = otsa
     resolution = ''
-    if contract['status'] == '3A' and \
-            ('ponowione' in inc['summary'] or (contract['ncs_error_desc'] is not None
-                                               and 'Timeout' in contract['ncs_error_desc'])) \
-            and contract['trans_num'] is not None:
+    if contract['status'] == '3A' and contract['trans_num'] and \
+            ('ponowione' in inc['summary'] or
+                 (contract['ncs_error_desc'] is not None and 'Timeout' in contract['ncs_error_desc'])):
         resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.\n'
         return resolution
     for line in inc['notes']:
         line = line.lower()
-        if 'wstrzym' in line and 'po stronie om' in line:
+        if ('wstrzym' in line and 'po stronie om' in line) \
+                or to_process(inc) and contract['trans_type'] != 'CA':
             resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.\n'
             return resolution
-        if 'koszyk' in line and 'oraz numer koszyka' not in line:
+        elif 'koszyk' in line and 'zatwierd' in line and 'oraz numer koszyka' not in line:
             opti = opti_connection()
             if contract['cart_code'] is not None:
                 cart_status = get_cart_status(opti, contract['cart_code'])
@@ -251,6 +260,8 @@ def process_1c(otsa, contract, inc):
         update_transaction(otsa, contract['trans_code'], '3D')
         update_contract(otsa, contract['trans_code'], '3D')
         resolution = 'Umowa ' + contract['trans_num'] + ' anulowana.'
+    elif to_process(inc):
+        return process_3c(otsa, contract, inc)
     else:
         resolution = ''
 
