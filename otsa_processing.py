@@ -4,7 +4,7 @@ from bscs import get_customer_id, bscs_connection, set_trans_no
 from om import get_orders
 from optipos import get_cart_status, opti_connection, set_cart_status
 from otsa import search_msisdn, update_transaction, update_contract, fix_90100, fix_csc185, search_cart, \
-    otsa_connection, fix_pesel, fix_csc178, fix_aac, fix_csc598, fix_csc598_cart
+    otsa_connection, fix_pesel, fix_csc178, fix_aac, fix_csc598, fix_csc598_cart, get_magnum_offers, get_promotion_codes
 from remedy import reassign_incident, update_summary, add_work_info
 
 
@@ -71,6 +71,15 @@ def to_process(inc):
     return False
 
 
+def is_magnum(otsa, contract):
+    magnum_offers = get_magnum_offers(otsa)
+    pc = get_promotion_codes(otsa, contract['trans_code'])
+    for code in pc:
+        if code in magnum_offers:
+            return True
+    return False
+
+
 def process_2y(otsa, contract, inc):
     resolution = ''
 
@@ -82,7 +91,7 @@ def process_2y(otsa, contract, inc):
 
     for line in inc['notes']:
         line = line.lower()
-        if 'wstrzym' in line and 'po stronie om' in line:
+        if 'wstrzym' in line and 'po stronie om' in line and not is_magnum(otsa, contract):
             resolution = 'Umowa ' + contract['trans_num'] + \
                          ' wstrzymana po stronie OM. Jest to poprawny biznesowo status. ' \
                          'Proszę anulować lub zatwierdzić. W razie kłopotów proszę o kontakt z Dealer Support'

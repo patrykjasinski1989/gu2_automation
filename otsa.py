@@ -186,3 +186,19 @@ def unlock_account(con, login):
         con.rollback()
     cur.close()
     return cur.rowcount
+
+
+def get_magnum_offers(con):
+    cur = con.cursor()
+    cur.execute("select id_oferty from otsa_kp.kp_oferty where nazwa_oferty like '!%' and rodzaj = 'AKT'")
+    rows = cur.fetchall()
+    cur.close()
+    return rows
+
+
+def get_promotion_codes(con, trans_code):
+    cur = con.cursor()
+    cur.execute("select distinct promotion_code from ptk_otsa_trans_contract where trans_code = {}".format(trans_code))
+    rows = cur.fetchall()
+    cur.close()
+    return rows
