@@ -61,7 +61,7 @@ def process_transactions():
         'SPRZEDAZ USLUG'
     )
 
-    msisdn_regex = re.compile('[0-9]{9}')
+    msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
     for inc in incidents:
         resolution = ''
         lines = inc['notes']
@@ -70,6 +70,7 @@ def process_transactions():
             if 'Proszę podać numer MSISDN' in lines[i] or 'Numer telefonu klienta Orange / MSISDN' in lines[i]:
                 msisdns = msisdn_regex.findall(lines[i+1])
                 msisdns += msisdn_regex.findall(lines[i+2])
+                msisdns = [msisdn.translate(None, ' -') for msisdn in msisdns]
                 resolution, all_resolved = process_msisdns(msisdns, inc)
         if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
