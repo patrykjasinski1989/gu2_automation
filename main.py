@@ -214,7 +214,7 @@ def unlock_accounts():
         if not login:
             wi = get_work_info(inc)
             for entry in wi:
-                if 'SD' in entry['summary'] and 'Prośba o zdjęcie daty logowania' in entry['notes'][0]:
+                if 'SD' in entry['summary'] and 'zdjęcie daty logowania' in entry['notes'][0]:
                     login = entry['notes'][0].split()[-1]
         # unlock account if login found
         if login:
