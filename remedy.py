@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime
+
 from pyremedy import ARS, ARSError
-from datetime import datetime, timedelta
+
 import config
 
 server = config.remedy['server']
@@ -135,6 +137,16 @@ def reassign_incident(inc, group):
                 entry_values={
                     'Categorization Tier 2': 'OM',
                     'Categorization Tier 3': 'OM - TECHNIKA - INNE'
+                }
+            )
+
+        elif group.upper() == 'NRA':
+            ars.update(
+                schema='HPD:Help Desk Classic',
+                entry_id=inc['id'],
+                entry_values={
+                    'Categorization Tier 2': 'NRA',
+                    'Categorization Tier 3': 'NRA - PROBLEM Z INNYMI DANYMI'
                 }
             )
 
