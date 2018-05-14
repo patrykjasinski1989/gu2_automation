@@ -57,7 +57,7 @@ def process_msisdns(msisdns, inc):
 def to_cancel(inc):
     for line in inc['notes']:
         line = line.lower()
-        if 'proszę o anul' in line or 'proszę anulować' in line or 'prosze o anulo' in line:
+        if 'proszę o anul' in line or 'proszę anulować' in line or 'prosze o anulo' in line or 'prośba o anul' in line:
             return True
     return False
 
