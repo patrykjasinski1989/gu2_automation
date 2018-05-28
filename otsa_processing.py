@@ -160,7 +160,7 @@ def process_3c(otsa, contract, inc):
     elif contract['ncs_error_desc'] is not None and 'CSC.178' in contract['ncs_error_desc']:
         fix_csc178(otsa, contract['cart_code'])
         resolution = ''
-    elif contract['ncs_error_desc'] is not None and 'CSC.598' in contract['ncs_error_desc']:
+    elif contract['ncs_error_desc'] is not None and 'CSC.59' in contract['ncs_error_desc']:  # CSC.598, CSC.597
         if not contract['cart_code']:
             fix_csc598(otsa, contract['trans_code'])
         else:
