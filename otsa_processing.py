@@ -80,6 +80,15 @@ def is_magnum(otsa, contract):
     return False
 
 
+def update_processing_status(inc):
+    if 'ponowione' not in inc['summary']:
+        update_summary(inc, 'ponowione')
+    elif 'ponowione2' not in inc['summary']:
+        update_summary(inc, 'ponowione2')
+    else:
+        update_summary(inc, 'ponowione3')
+
+
 def process_2y(otsa, contract, inc):
     resolution = ''
 
@@ -136,6 +145,9 @@ def process_2b(otsa, contract, inc):
 
 
 def process_3c(otsa, contract, inc):
+    if 'ponowione3' in inc['summary']:
+        return ''
+
     if contract['process_error'] == 103199:
         resolution = 'Tak wygląda proces sprzedażowy dla Magnumów. Jeśli nie było logistyki (w OM lub w kanale), ' \
                      'to zlecenie MV musi być zawieszone w OM (HALTED) i dopiero wtedy można złożyć zlecenie DATA.'
@@ -193,7 +205,7 @@ def process_3c(otsa, contract, inc):
         resolution = ''
 
     update_transaction(otsa, contract['trans_code'], '1B')
-    update_summary(inc, 'ponowione')
+    update_processing_status(inc)
     return resolution
 
 
@@ -223,6 +235,9 @@ def process_1f(otsa, contract, inc):
 
 
 def process_1h(otsa, contract, inc):
+    if 'ponowione3' in inc['summary']:
+        return ''
+
     if contract['cart_code'] != '':
         resolution = ''
         cart = search_cart(otsa, contract['cart_code'])
@@ -235,10 +250,10 @@ def process_1h(otsa, contract, inc):
                 fix_pesel(otsa, trans['trans_code'])
             if trans['status'] == '3C' and trans['trans_type'] == 'CA':
                 resolution = process_3c(otsa, trans, inc)
-                update_summary(inc, 'ponowione')
+                update_processing_status(inc)
             elif trans['status'] == '3C' and ca_processed:
                 resolution = process_3c(otsa, trans, inc)
-                update_summary(inc, 'ponowione')
+                update_processing_status(inc)
     else:
         resolution = process_3c(otsa, contract, inc)
     return resolution
@@ -294,7 +309,7 @@ def process_1d(otsa, contract, inc):
 
     if not to_cancel(inc):
         update_transaction(otsa, contract['trans_code'], '1B')
-        update_summary(inc, 'ponowione')
+        update_processing_status(inc)
     else:
         update_transaction(otsa, contract['trans_code'], '3D')
         update_contract(otsa, contract['trans_code'], '3D')
