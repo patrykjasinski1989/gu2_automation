@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
-
 from datetime import datetime
+
 from dateutil import parser
 
 from eai import get_expiration_date, get_contract_data
@@ -9,8 +9,7 @@ from muchomor import unlock_imei
 from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
-from remedy import get_incidents, close_incident, is_empty, get_work_info, get_fields, add_work_info, has_attachment, \
-    hold_incident, reassign_incident
+from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident
 
 
 def unlock_imeis():
@@ -120,7 +119,7 @@ def release_resources():
                         partial_resolution = 'Karta SIM {0} aktywna. Brak możliwości odblokowania.'.format(sim)
                     else:
                         all_resolved = False
-                        wi_notes += 'Karta SIM {} w statusie {}.'.format(sim, sim_status)
+                        wi_notes += 'Karta SIM {} w statusie {}.\nW Optiposie brak powiązań.'.format(sim, sim_status)
                 if wi_notes:
                     add_work_info(inc, 'VC_OPTIPOS', wi_notes)
                     reassign_incident(inc, 'NRA')
