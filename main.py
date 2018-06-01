@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import os
 import re
 from datetime import datetime
 
+import cx_Oracle
 from dateutil import parser
 
 from eai import get_expiration_date, get_contract_data
@@ -230,13 +232,22 @@ def unlock_accounts():
 
 if __name__ == '__main__':
 
-    print "ODBLOKOWANIE IMEI"
-    unlock_imeis()
-    print "ODBLOKOWANIE KONTA"
-    unlock_accounts()
-    print "AKTYWACJA KLIENTA/MIGRACJA KLIENTA/SPRZEDAŻ USŁUG"
-    process_transactions()
-    print "UWOLNIENIE ZASOBÓW"
-    release_resources()
-    print "PROBLEMY Z OFERTĄ"
-    problems_with_offer()
+    lock_file = 'lock'
+
+    if os.path.exists(lock_file):
+        print('Lock file exists. Remove it to run the program.')
+        exit(666)
+    try:
+        print "ODBLOKOWANIE IMEI"
+        unlock_imeis()
+        print "ODBLOKOWANIE KONTA"
+        unlock_accounts()
+        print "AKTYWACJA KLIENTA/MIGRACJA KLIENTA/SPRZEDAŻ USŁUG"
+        process_transactions()
+        print "UWOLNIENIE ZASOBÓW"
+        release_resources()
+        print "PROBLEMY Z OFERTĄ"
+        problems_with_offer()
+    except cx_Oracle.DatabaseError as e:
+        print('Database error: {}.\nCreating lock file and exiting...'.format(e))
+        open(lock_file, 'w+')
