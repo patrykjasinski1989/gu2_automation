@@ -29,8 +29,8 @@ def set_cart_status(con, cart_id, status):
 
 if __name__ == "__main__":
     opti = opti_connection()
-    print get_cart_status(opti, 6654712)
+    print(get_cart_status(opti, 6654712))
     set_cart_status(opti, 6654712, '3D')
-    print get_cart_status(opti, 6654712)
+    print(get_cart_status(opti, 6654712))
     set_cart_status(opti, 6654712, '3A')
-    print get_cart_status(opti, 6654712)
+    print(get_cart_status(opti, 6654712))

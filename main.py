@@ -39,7 +39,7 @@ def unlock_imeis():
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
         if resolution.strip() != '':
             close_incident(inc, resolution)
-        print '{}: {}'.format(inc['inc'], resolution.strip())
+        print('{}: {}'.format(inc['inc'], resolution.strip()))
 
 
 def process_transactions():
@@ -71,13 +71,13 @@ def process_transactions():
             if 'Proszę podać numer MSISDN' in lines[i] or 'Numer telefonu klienta Orange / MSISDN' in lines[i]:
                 msisdns = msisdn_regex.findall(lines[i+1])
                 msisdns += msisdn_regex.findall(lines[i+2])
-                msisdns = [msisdn.translate(None, ' -') for msisdn in msisdns]
+                msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
                 resolution, all_resolved = process_msisdns(msisdns, inc)
         if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
         if resolution != '' and all_resolved:
             close_incident(inc, resolution)
-        print '{}: {}'.format(inc['inc'], resolution.strip())
+        print('{}: {}'.format(inc['inc'], resolution.strip()))
 
 
 def release_resources():
@@ -139,7 +139,7 @@ def release_resources():
         if all_resolved and resolution != '':
             close_incident(inc, resolution)
 
-        print '{}: {}'.format(inc['inc'], resolution.strip())
+        print('{}: {}'.format(inc['inc'], resolution.strip()))
     otsa.close()
 
 
@@ -179,7 +179,7 @@ def problems_with_offer():
                          'Brak błędu aplikacji.'.format(expiration_date, offer_name)
             close_incident(inc, resolution)
 
-        print '{}: {}'.format(inc['inc'], resolution.strip())
+        print('{}: {}'.format(inc['inc'], resolution.strip()))
 
 
 def unlock_accounts():
@@ -225,7 +225,7 @@ def unlock_accounts():
                 resolution = 'Konto o loginie {} jest aktywne. Nowe hasło to: centertel.'.format(login)
                 close_incident(inc, resolution)
 
-        print '{}: {}'.format(inc['inc'], resolution.strip())
+        print('{}: {}'.format(inc['inc'], resolution.strip()))
 
     otsa.close()
 
@@ -238,15 +238,15 @@ if __name__ == '__main__':
         print('Lock file exists. Remove it to run the program.')
         exit(666)
     try:
-        print "ODBLOKOWANIE IMEI"
+        print("ODBLOKOWANIE IMEI")
         unlock_imeis()
-        print "ODBLOKOWANIE KONTA"
+        print("ODBLOKOWANIE KONTA")
         unlock_accounts()
-        print "AKTYWACJA KLIENTA/MIGRACJA KLIENTA/SPRZEDAŻ USŁUG"
+        print("AKTYWACJA KLIENTA/MIGRACJA KLIENTA/SPRZEDAŻ USŁUG")
         process_transactions()
-        print "UWOLNIENIE ZASOBÓW"
+        print("UWOLNIENIE ZASOBÓW")
         release_resources()
-        print "PROBLEMY Z OFERTĄ"
+        print("PROBLEMY Z OFERTĄ")
         problems_with_offer()
     except cx_Oracle.DatabaseError as e:
         print('Database error: {}.\nCreating lock file and exiting...'.format(e))

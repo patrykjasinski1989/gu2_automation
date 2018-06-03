@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import cx_Oracle
+
 import config
 
 
@@ -84,5 +85,5 @@ def set_imsi_status_bscs(con, imsi, status):
 
 if __name__ == "__main__":
     nra = nra_connection()
-    print get_sim_status(nra, '8948030322510315157')
+    print(get_sim_status(nra, '8948030322510315157'))
     nra.close()

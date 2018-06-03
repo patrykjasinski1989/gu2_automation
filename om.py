@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import requests
 from requests.auth import HTTPBasicAuth
+
 import config
 
 server = config.om['server']
@@ -101,11 +102,11 @@ if __name__ == '__main__':
                 '518405117',
                 '515302837',
                 '501332190']
-    print len(_msisdns)
+    print(len(_msisdns))
     cnt = 0
     for msisdn in _msisdns:
         orders = get_orders(msisdn)
         for order in orders:
             if order['channel'] == 'OTSA' and order['status'] == 'COMPLETED':
                 cnt = cnt + 1
-    print cnt
+    print(cnt)

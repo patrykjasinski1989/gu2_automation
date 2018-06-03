@@ -33,5 +33,5 @@ def set_trans_no(con, custcode, trans_no):
 
 if __name__ == "__main__":
     bscs = bscs_connection()
-    print get_customer_id(bscs, '1.20894258')
+    print(get_customer_id(bscs, '1.20894258'))
     bscs.close()
