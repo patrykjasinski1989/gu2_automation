@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-from datetime import datetime
 
 import cx_Oracle
+from datetime import datetime
 from dateutil import parser
 
 from eai import get_expiration_date, get_contract_data
@@ -233,7 +233,6 @@ def unlock_accounts():
 if __name__ == '__main__':
 
     lock_file = 'lock'
-
     if os.path.exists(lock_file):
         print('Lock file exists. Remove it to run the program.')
         exit(666)
@@ -251,3 +250,4 @@ if __name__ == '__main__':
     except cx_Oracle.DatabaseError as e:
         print('Database error: {}.\nCreating lock file and exiting...'.format(e))
         open(lock_file, 'w+')
+        exit(666)

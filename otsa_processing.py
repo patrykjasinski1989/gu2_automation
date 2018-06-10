@@ -167,7 +167,7 @@ def process_3c(otsa, contract, inc):
                      'W razie wątpliwości proszę o kontakt z Dealer Support.'
         return resolution
     elif contract['process_error'] == 200307:
-        update_transaction(otsa, contract['trans_code'], '1C')
+        update_transaction(otsa, contract['trans_code'], '1C')  # TODO update all transactions in cart, not only CA
         resolution = 'Wybrano efakturę, a nie podano adresu email. ' \
                      'Proszę zmienić metodę wysyłki faktury lub uzupełnić adres mailowy. ' \
                      'Umowa w statusie do poprawienia. W razie wątpliwości proszę kontaktować się z Dealer Support.'
