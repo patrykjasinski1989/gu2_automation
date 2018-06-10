@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-
 from pyremedy import ARS, ARSError
 
 import config
@@ -286,3 +285,40 @@ def has_attachment(work_info):
         if entry['attachments_cnt']:
             return True
     return False
+
+
+def get_pending_incidents(groups):
+    try:
+        ars = ARS(
+            server=server, port=port,
+            user=user, password=password
+        )
+
+        qualifier = """'Status*' = "Pending" AND 'Status_Reason_Hidden' = "Problem" AND ("""
+        for group in groups:
+            qualifier += """'Assigned Group*+' = "%s" OR """ % group
+        qualifier = qualifier[:-3]
+        qualifier += ")"
+
+        entries = ars.query(
+            schema='HPD:Help Desk Classic',
+            qualifier=qualifier,
+            fields=['Incident Number', 'Problem ID']
+        )
+
+        incidents = []
+        for entry_id, entry_values in entries:
+            for field, value in entry_values.items():
+                if field == 'Incident Number':
+                    inc = value
+                elif field == 'Problem ID':
+                    pbi = value
+            incidents.append({'id': entry_id, 'inc': inc, 'pbi': pbi})
+
+        return incidents
+
+    except ARSError as e:
+        print('ERROR: {}'.format(e))
+        return e
+    finally:
+        ars.terminate()
