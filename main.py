@@ -63,6 +63,7 @@ def process_transactions():
     )
 
     msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
+    trans_num_regex = re.compile('[A-Z0-9]{5,}?/?[0-9]{4}/[0-9]+')
     for inc in incidents:
         resolution = ''
         lines = inc['notes']
@@ -72,7 +73,8 @@ def process_transactions():
                 msisdns = msisdn_regex.findall(lines[i+1])
                 msisdns += msisdn_regex.findall(lines[i+2])
                 msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
-                resolution, all_resolved = process_msisdns(msisdns, inc)
+                trans_nums = trans_num_regex.findall(lines[i + 1])
+                resolution, all_resolved = process_msisdns(msisdns, trans_nums, inc)
         if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
         if resolution != '' and all_resolved:

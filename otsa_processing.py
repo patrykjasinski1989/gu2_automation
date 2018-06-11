@@ -4,17 +4,19 @@ from bscs import get_customer_id, bscs_connection, set_trans_no
 from om import get_orders
 from optipos import get_cart_status, opti_connection, set_cart_status
 from otsa import search_msisdn, update_transaction, update_contract, fix_90100, fix_csc185, search_cart, \
-    otsa_connection, fix_pesel, fix_csc178, fix_aac, fix_csc598, fix_csc598_cart, get_magnum_offers, get_promotion_codes
+    otsa_connection, fix_pesel, fix_csc178, fix_aac, fix_csc598, fix_csc598_cart, get_magnum_offers, \
+    get_promotion_codes, search_trans_num
 from remedy import reassign_incident, update_summary, add_work_info
 
 
-def process_msisdns(msisdns, inc):
+def process_msisdns(msisdns, trans_nums, inc):
     otsa = otsa_connection()
     resolution = ''
     work_info = ''
     all_resolved = True
-    for msisdn in msisdns:
-        contracts = search_msisdn(otsa, msisdn)
+    for id in (msisdns + trans_nums):
+        contracts = search_msisdn(otsa, id)
+        contracts += search_trans_num(otsa, id)
         contracts = [contract for contract in contracts
                      if (contract['status'] not in ['9', '3D', '3G']
                          or (contract['status'] == '3A' and contract['trans_type'] not in ['MNP1', 'PRPS']))]

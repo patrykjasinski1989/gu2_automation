@@ -31,6 +31,24 @@ def search_msisdn(con, msisdn):
     return dict_rows
 
 
+def search_trans_num(con, trans_num):
+    cur = con.cursor()
+    cur.execute('select t.cart_code, t.trans_code, con.msisdn, t.status, t.ncs_trans_num, t.om_order_id, '
+                't.process_error, t.ncs_error_desc, t.trans_type, t.author_user_code, t.trans_num, t.create_date, '
+                'crm_customer_id, t.custcode from ptk_otsa_transaction t, ptk_otsa_trans_contract con '
+                'where t.trans_code = con.trans_code (+) and t.trans_num = \'' + str(trans_num) + '\'')
+    rows = cur.fetchall()
+    cur.close()
+    dict_rows = []
+    for row in rows:
+        dict_rows.append({'cart_code': row[0], 'trans_code': row[1], 'msisdn': row[2], 'status': row[3],
+                          'ncs_trans_num': row[4], 'om_order_id': row[5], 'process_error': row[6],
+                          'ncs_error_desc': row[7], 'trans_type': row[8], 'author_user_code': row[9],
+                          'trans_num': row[10], 'create_date': row[11], 'crm_customer_id': row[12],
+                          'custcode': row[13]})
+    return dict_rows
+
+
 def search_cart(con, cart_code):
     cur = con.cursor()
     try:
