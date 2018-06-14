@@ -204,6 +204,7 @@ def process_3c(otsa, contract, inc):
                                                   'W razie wątpliwości proszę o kontakt z Dealer Support.'
         return resolution
     elif contract['ncs_error_desc'] is not None and 'na zleceniu nie odpowiada' in contract['ncs_error_desc']:
+        add_work_info(inc, 'VC_OPTIPOS', 'Prośba o weryfikację, MSISDN {}.'.format(contract['msisdn']))
         reassign_incident(inc, 'OV')
         resolution = ''
     elif contract['ncs_error_desc'] is not None and 'Voucher' in contract['ncs_error_desc']:
