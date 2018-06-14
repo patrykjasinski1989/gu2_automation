@@ -207,6 +207,7 @@ def process_3c(otsa, contract, inc):
         reassign_incident(inc, 'OV')
         resolution = ''
     elif contract['ncs_error_desc'] is not None and 'Voucher' in contract['ncs_error_desc']:
+        add_work_info(inc, 'VC_OPTIPOS', 'Prośba o zmianę statusu vouchera, MSISDN {}.'.format(contract['msisdn']))
         reassign_incident(inc, 'OV')
         resolution = ''
     else:
