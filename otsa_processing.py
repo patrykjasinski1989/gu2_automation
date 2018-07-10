@@ -135,7 +135,9 @@ def process_2y(otsa, contract, inc):
 
 def process_2b(otsa, contract, inc):
     _ = otsa
-    wi = ''
+    resolution, wi = '', ''
+    if to_cancel(inc):
+        return resolution, wi
     if 'ponowione' in inc['summary']:
         resolution = 'Umowa ' + contract['trans_num'] + ' przekazana do realizacji.'
     else:  # TODO Umowy TLS (trans_type like 'T%') do sprawdzenia w ML

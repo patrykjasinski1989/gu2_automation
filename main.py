@@ -11,7 +11,8 @@ from muchomor import unlock_imei
 from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
-from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident
+from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident, \
+    update_summary
 
 
 def unlock_imeis():
@@ -39,7 +40,7 @@ def unlock_imeis():
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
         if resolution.strip() != '':
             close_incident(inc, resolution)
-        print('{}: {}'.format(inc['inc'], resolution.strip()))
+            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
 
 
 def process_transactions():
@@ -79,7 +80,7 @@ def process_transactions():
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
         if resolution != '' and all_resolved:
             close_incident(inc, resolution)
-        print('{}: {}'.format(inc['inc'], resolution.strip()))
+            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
 
 
 def release_resources():
@@ -140,8 +141,7 @@ def release_resources():
 
         if all_resolved and resolution != '':
             close_incident(inc, resolution)
-
-        print('{}: {}'.format(inc['inc'], resolution.strip()))
+            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
     otsa.close()
 
 
@@ -180,8 +180,7 @@ def problems_with_offer():
                          'jest dostępna na 120 dni przed końcem lojalki, czyli klient tych wymagań nie spełnia. ' \
                          'Brak błędu aplikacji.'.format(expiration_date, offer_name)
             close_incident(inc, resolution)
-
-        print('{}: {}'.format(inc['inc'], resolution.strip()))
+            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
 
 
 def unlock_accounts():
@@ -226,28 +225,49 @@ def unlock_accounts():
             if rows_updated == 1:
                 resolution = 'Konto o loginie {} jest aktywne. Nowe hasło to: centertel.'.format(login)
                 close_incident(inc, resolution)
-
-        print('{}: {}'.format(inc['inc'], resolution.strip()))
+                print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
 
     otsa.close()
 
 
+def revert_inc_status():
+    incidents = get_incidents(
+        'VC_BSS_MOBILE_OPTIPOS',
+        '000_incydent/awaria/uszkodzenie',
+        'OPTIPOS - OFERTA PTK',
+        'AKTYWACJA KLIENTA'
+    )
+    incidents += get_incidents(
+        'VC_BSS_MOBILE_OPTIPOS',
+        '000_incydent/awaria/uszkodzenie',
+        'OPTIPOS - OFERTA PTK',
+        'MIGRACJA KLIENTA'
+    )
+    incidents += get_incidents(
+        'VC_BSS_MOBILE_OPTIPOS',
+        '000_incydent/awaria/uszkodzenie',
+        'OPTIPOS - OFERTA PTK',
+        'SPRZEDAZ USLUG'
+    )
+
+    for inc in incidents:
+        if 'ponowione3' in inc['summary']:
+            update_summary(inc, 'ponowione2')
+
+
 if __name__ == '__main__':
+
+    # revert_inc_status()
 
     lock_file = 'lock'
     if os.path.exists(lock_file):
         print('Lock file exists. Remove it to run the program.')
         exit(666)
     try:
-        print("ODBLOKOWANIE IMEI")
         unlock_imeis()
-        print("ODBLOKOWANIE KONTA")
         unlock_accounts()
-        print("AKTYWACJA KLIENTA/MIGRACJA KLIENTA/SPRZEDAŻ USŁUG")
         process_transactions()
-        print("UWOLNIENIE ZASOBÓW")
         release_resources()
-        print("PROBLEMY Z OFERTĄ")
         problems_with_offer()
     except cx_Oracle.DatabaseError as e:
         print('Database error: {}.\nCreating lock file and exiting...'.format(e))
