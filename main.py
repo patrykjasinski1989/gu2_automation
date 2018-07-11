@@ -219,7 +219,8 @@ def unlock_accounts():
                 if 'SD' in entry['summary'] and 'zdjęcie daty logowania' in entry['notes'][0]:
                     notes = entry['notes'][0].lower().split()
                     for word in 'lub odbicie na sd'.split():
-                        notes.remove(word)
+                        if word in notes:
+                            notes.remove(word)
                     if 'konta' in notes:
                         login = notes[notes.index('konta') + 1]
                     else:
