@@ -202,7 +202,6 @@ def unlock_accounts():
     otsa = otsa_connection()
 
     for inc in incidents:
-        resolution = ''
         login = None
         # looking for login in incident description
         login_in_next_line = False
@@ -218,9 +217,15 @@ def unlock_accounts():
             wi = get_work_info(inc)
             for entry in wi:
                 if 'SD' in entry['summary'] and 'zdjęcie daty logowania' in entry['notes'][0]:
-                    login = entry['notes'][0].split()[-1]
+                    notes = entry['notes'][0].lower().split()
+                    for word in 'lub odbicie na sd'.split():
+                        notes.remove(word)
+                    if 'konta' in notes:
+                        login = notes[notes.index('konta') + 1]
+                    else:
+                        login = notes[-1]
         # unlock account if login found
-        if login:
+        if login and login != 'sd':
             rows_updated = unlock_account(otsa, login)
             if rows_updated == 1:
                 resolution = 'Konto o loginie {} jest aktywne. Nowe hasło to: centertel.'.format(login)
@@ -257,7 +262,7 @@ def revert_inc_status():
 
 if __name__ == '__main__':
 
-    # revert_inc_status()
+    revert_inc_status()
 
     lock_file = 'lock'
     if os.path.exists(lock_file):
