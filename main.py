@@ -263,7 +263,7 @@ def revert_inc_status():
 
 if __name__ == '__main__':
 
-    revert_inc_status()
+    # revert_inc_status()
 
     lock_file = 'lock'
     if os.path.exists(lock_file):
