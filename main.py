@@ -226,7 +226,7 @@ def unlock_accounts():
                     else:
                         login = notes[-1]
         # unlock account if login found
-        if login and login != 'sd':
+        if login:
             rows_updated = unlock_account(otsa, login)
             if rows_updated == 1:
                 resolution = 'Konto o loginie {} jest aktywne. Nowe hasło to: centertel.'.format(login)
