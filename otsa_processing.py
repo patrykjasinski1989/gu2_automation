@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+import paramiko as paramiko
 
+import config
 from bscs import get_customer_id, bscs_connection, set_trans_no
 from om import get_orders
 from optipos import get_cart_status, opti_connection, set_cart_status
@@ -150,6 +152,18 @@ def process_2b(otsa, contract, inc):
 
 def process_3c(otsa, contract, inc):
     if 'ponowione3' in inc['summary']:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(config.optpos_logs['server'],
+                    username=config.optpos_logs['user'], password=config.optpos_logs['password'])
+        _, ssh_stdout, _ = ssh.exec_command(
+            'grep {} /nas/logs/optpos/NodeManagerLogs/applier_*.log | grep INVOKE | tail -2 | grep -v ">0</errorCode>"'
+                .format(contract['trans_code']))
+        logs = ssh_stdout.readlines()
+        if len(logs) == 2:
+            work_info = 'Prośba o weryfikację: \r\n' + logs[0] + logs[1]
+            add_work_info(inc, 'VC_OPTIPOS', work_info)
+            reassign_incident(inc, 'OV')
         return ''
 
     if contract['process_error'] == 103199:
