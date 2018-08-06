@@ -272,7 +272,8 @@ def get_schemas():
 
 def is_empty(inc):
     lines = inc['notes']
-    if '---[ dane identyfikacyjne komputera ]---' in lines[1] \
+    if len(lines) > 4 \
+            and '---[ dane identyfikacyjne komputera ]---' in lines[1] \
             and 'Lokalizacja: ' in lines[3] \
             and 'Telefony kontaktowe:' in lines[4]:
                 return True
