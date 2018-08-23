@@ -217,7 +217,7 @@ def unlock_accounts():
             wi = get_work_info(inc)
             for entry in wi:
                 if 'SD' in entry['summary'] and 'zdjęcie daty logowania' in entry['notes'][0]:
-                    notes = entry['notes'][0].lower().split()
+                    notes = ' '.join(entry['notes']).lower().split()
                     for word in 'lub odbicie na sd'.split():
                         if word in notes:
                             notes.remove(word)
