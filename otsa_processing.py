@@ -21,7 +21,7 @@ def process_msisdns(msisdns, trans_nums, inc):
         contracts += search_trans_num(otsa, id)
         contracts = [contract for contract in contracts
                      if (contract['status'] not in ['9', '3D', '3G']
-                         or (contract['status'] == '3A' and contract['trans_type'] not in ['MNP1', 'PRPS']))]
+                         and contract['trans_type'] not in ['MNP1', 'PRPS', 'PPRPS'])]
         for contract in contracts:
             partial_wi = ''
             if contract['status'] == '2Y':
@@ -292,7 +292,8 @@ def process_3a(otsa, contract, inc):
     resolution = ''
     if contract['status'] == '3A' and contract['trans_num'] and \
             ('ponowione' in inc['summary'] or
-                 (contract['ncs_error_desc'] is not None and 'Timeout' in contract['ncs_error_desc'])):
+             (contract['ncs_error_desc'] and 'Timeout' in contract['ncs_error_desc']) or
+             (contract['process_error'] and contract['process_error'] == -31000)):
         resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.'
         return resolution
     for line in inc['notes']:
