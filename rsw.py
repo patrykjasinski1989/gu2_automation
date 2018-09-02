@@ -26,3 +26,17 @@ def set_order_status(con, order_id, status):
         con.rollback()
     cur.close()
     return cur.rowcount
+
+
+def get_latest_order(con, msisdn):
+    cur = con.cursor()
+    cur.execute('select * from (select id_zamowienia, data_zamowienia, status, status_om, ilosc_prob '
+                "from rsw.rsw_zamowienia where dn_num = '{}') where rownum = 1".format(msisdn))
+    row = cur.fetchone()
+    cur.close()
+    if cur.rowcount == 1:
+        dict_row = {'id_zamowienia': row[0], 'data_zamowienia': row[1],
+                    'status': row[2], 'status_om': row[3], 'ilosc_prob': row[4]}
+    else:
+        dict_row = None
+    return dict_row

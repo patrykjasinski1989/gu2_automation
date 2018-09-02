@@ -290,12 +290,18 @@ def process_1h(otsa, contract, inc):
 def process_3a(otsa, contract, inc):
     _ = otsa
     resolution = ''
+
+    # if to_cancel(inc):
+    #     return 'Brak błędu, komunikat jest zgodnie z założeniami biznesowymi. ' \
+    #            'Anulowane migracje proszę wypisywać ponownie ręcznie w systemie SERWUS.'
+
     if contract['status'] == '3A' and contract['trans_num'] and \
             ('ponowione' in inc['summary'] or
              (contract['ncs_error_desc'] and 'Timeout' in contract['ncs_error_desc']) or
              (contract['process_error'] and contract['process_error'] == -31000)):
         resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.'
         return resolution
+
     for line in inc['notes']:
         line = line.lower()
         if ('wstrzym' in line and 'po stronie om' in line) \

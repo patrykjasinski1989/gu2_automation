@@ -102,6 +102,30 @@ def hold_incident(inc, resolution):
         ars.terminate()
 
 
+def assign_incident(inc):
+    try:
+        ars = ARS(
+            server=server, port=port,
+            user=user, password=password
+        )
+
+        ars.update(
+            schema='HPD:Help Desk Classic',
+            entry_id=inc['id'],
+            entry_values={
+                'Status': 'Assigned',
+                'Assignee': 'PATRYK JASIŃSKI',
+                'Assignee Login ID': 'jasinpa4',
+            }
+        )
+
+    except ARSError as e:
+        print('ERROR: {}'.format(e))
+        return e
+    finally:
+        ars.terminate()
+
+
 def reassign_incident(inc, group):
 
     if '_' not in group and 'Servicedesk' not in group:
@@ -304,7 +328,7 @@ def get_pending_incidents(groups):
         entries = ars.query(
             schema='HPD:Help Desk Classic',
             qualifier=qualifier,
-            fields=['Incident Number', 'Problem ID']
+            fields=['Incident Number', 'Problem ID', 'Detailed Decription', 'Reported Date']
         )
 
         incidents = []
@@ -314,7 +338,11 @@ def get_pending_incidents(groups):
                     inc = value
                 elif field == 'Problem ID':
                     pbi = value
-            incidents.append({'id': entry_id, 'inc': inc, 'pbi': pbi})
+                elif field == 'Detailed Decription':
+                    notes = value.split('\r\n')
+                elif field == 'Reported Date':
+                    reported_date = value
+            incidents.append({'id': entry_id, 'inc': inc, 'pbi': pbi, 'notes': notes, 'reported_date': reported_date})
 
         return incidents
 
