@@ -12,7 +12,8 @@ from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_stat
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident, \
-    update_summary
+    update_summary, get_pending_incidents, get_fields, assign_incident
+from rsw import rsw_connection, get_latest_order
 
 
 def unlock_imeis():
@@ -236,6 +237,37 @@ def unlock_accounts():
     otsa.close()
 
 
+def close_pending_rsw():
+    incidents = get_pending_incidents(['VC_BSS_MOBILE_RSW'])
+    msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
+    rsw = rsw_connection()
+    for inc in incidents:
+        resolution = ''
+        lines = inc['notes']
+        for i in range(len(lines)):
+            if 'Numer telefonu klienta Orange / MSISDN' in lines[i] and i < len(lines) - 1:
+                msisdns = msisdn_regex.findall(lines[i+1])
+        msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
+        if len(msisdns) != 1:
+            continue
+        else:
+            msisdn = msisdns[0]
+        last_order = get_latest_order(rsw, msisdn)
+        if last_order and last_order['data_zamowienia'] > inc['reported_date'] and last_order['ilosc_prob'] == 0:
+            if last_order['status'] == 16 and last_order['status_om'] == 4:
+                resolution = 'Na podanym numerze {} jest już zrealizowane zamówienie {} z {}.'.\
+                    format(msisdn, last_order['id_zamowienia'], last_order['data_zamowienia'])
+            elif last_order['status'] in (2, 3):
+                resolution = 'Na podanym numerze {} jest już zamówienie {} w trakcie realizacji w ML.'.\
+                    format(msisdn, last_order['id_zamowienia'])
+        if resolution:
+            assign_incident(inc)
+            close_incident(inc, resolution)
+            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
+
+    rsw.close()
+
+
 def revert_inc_status():
     incidents = get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
@@ -263,8 +295,6 @@ def revert_inc_status():
 
 if __name__ == '__main__':
 
-    # revert_inc_status()
-
     lock_file = 'lock'
     if os.path.exists(lock_file):
         print('Lock file exists. Remove it to run the program.')
@@ -275,6 +305,7 @@ if __name__ == '__main__':
         process_transactions()
         release_resources()
         problems_with_offer()
+        close_pending_rsw()
     except cx_Oracle.DatabaseError as e:
         print('Database error: {}.\nCreating lock file and exiting...'.format(e))
         open(lock_file, 'w+')

@@ -61,8 +61,7 @@ def process_msisdns(msisdns, trans_nums, inc):
 def to_cancel(inc):
     for line in inc['notes']:
         line = line.lower()
-        if 'proszę o anul' in line or 'proszę anulować' in line or 'prosze o anulo' in line or 'prośba o anul' in line \
-                or 'anulowanie umowy' in line:
+        if 'proszę o anul' in line or 'proszę anulować' in line or 'prosze o anulo' in line or 'prośba o anul' in line:
             return True
     return False
 
@@ -158,7 +157,7 @@ def process_3c(otsa, contract, inc):
         ssh.connect(config.optpos_logs['server'],
                     username=config.optpos_logs['user'], password=config.optpos_logs['password'])
         _, ssh_stdout, _ = ssh.exec_command(
-            'grep {} /nas/logs/optpos/NodeManagerLogs/applier_*.log | grep INVOKE | tail -2 | grep -v ">0</errorCode>" | grep -v createInteraction'
+            'grep {} /nas/logs/optpos/NodeManagerLogs/applier_*.log | grep INVOKE | tail -2 | grep -v ">0</errorCode>"'
                 .format(contract['trans_code']))
         logs = ssh_stdout.readlines()
         if len(logs) == 2:
