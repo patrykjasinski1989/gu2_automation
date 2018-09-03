@@ -12,7 +12,7 @@ from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_stat
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident, \
-    update_summary, get_pending_incidents, get_fields, assign_incident
+    update_summary, get_pending_incidents, assign_incident
 from rsw import rsw_connection, get_latest_order
 
 
@@ -191,7 +191,8 @@ def unlock_accounts():
         'OTSA/OPTIPOS',
         'ODBLOKOWANIE KONTA'
     )
-    sd_tiers = ['OKI i SOHO - AKTYWACJA KONTA', '[DETAL PTK] KKB,ADT - AKTYWACJA KONTA']
+    sd_tiers = ['OKI i SOHO - AKTYWACJA KONTA', '[DETAL PTK] KKB,ADT - AKTYWACJA KONTA',
+                '[DETAL TP] DEALER SUPPORT - AKTYWACJA KONTA']
     for tier3 in sd_tiers:
         incidents += get_incidents(
             'VC_BSS_MOBILE_OPTIPOS',
