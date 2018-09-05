@@ -192,7 +192,7 @@ def unlock_accounts():
         'ODBLOKOWANIE KONTA'
     )
     sd_tiers = ['OKI i SOHO - AKTYWACJA KONTA', '[DETAL PTK] KKB,ADT - AKTYWACJA KONTA',
-                '[DETAL TP] DEALER SUPPORT - AKTYWACJA KONTA']
+                '[DETAL TP] DEALER SUPPORT - AKTYWACJA KONTA', 'ZŁD Aktywacja/Modyfikacja konta']
     for tier3 in sd_tiers:
         incidents += get_incidents(
             'VC_BSS_MOBILE_OPTIPOS',
