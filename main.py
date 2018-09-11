@@ -12,7 +12,7 @@ from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_stat
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident, \
-    update_summary, get_pending_incidents, assign_incident
+    update_summary, get_pending_incidents, assign_incident, get_schemas, get_fields
 from rsw import rsw_connection, get_latest_order
 
 
@@ -24,7 +24,7 @@ def unlock_imeis():
         'ODBLOKOWANIE IMEI'
     )
 
-    imei_regex = re.compile('[a-zA-Z0-9]{9,15}')
+    imei_regex = re.compile('[a-zA-Z0-9]0{9,15}')
     imeis = []
 
     for inc in incidents:
@@ -295,6 +295,7 @@ def revert_inc_status():
 
 
 if __name__ == '__main__':
+
 
     lock_file = 'lock'
     if os.path.exists(lock_file):

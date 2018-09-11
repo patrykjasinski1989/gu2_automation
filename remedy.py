@@ -8,6 +8,8 @@ server = config.remedy['server']
 port = config.remedy['port']
 user = config.remedy['user']
 password = config.remedy['password']
+schema_inc = 'HPD:Help Desk'
+schema_wi = 'HPD:WorkLog'
 
 
 def get_incidents(group, tier1, tier2, tier3):
@@ -18,12 +20,12 @@ def get_incidents(group, tier1, tier2, tier3):
         )
 
         entries = ars.query(
-            schema='HPD:Help Desk Classic',
-            qualifier="""'Status*' = "Assigned"
-                                 AND 'Assigned Group*+' = "%s"
-                                 AND 'Operational Categorization Tier 1' = "%s"
-                                 AND 'Operational Categorization Tier 2' = "%s"
-                                 AND 'Operational Categorization Tier 3' = "%s"
+            schema=schema_inc,
+            qualifier=""" 'Status' = "Assigned" 
+                                 AND 'Assigned Group*+' = "%s" 
+                                 AND 'Operational Categorization Tier 1' = "%s" 
+                                 AND 'Operational Categorization Tier 2' = "%s" 
+                                 AND 'Operational Categorization Tier 3' = "%s" 
                                  """ % (group, tier1, tier2, tier3),
             fields=['Incident Number', 'Detailed Decription', 'Description']
         )
@@ -56,7 +58,7 @@ def close_incident(inc, resolution):
         )
 
         ars.update(
-            schema='HPD:Help Desk Classic',
+            schema=schema_inc,
             entry_id=inc['id'],
             entry_values={
                 'Status': 'Resolved',
@@ -82,7 +84,7 @@ def hold_incident(inc, resolution):
         )
 
         ars.update(
-            schema='HPD:Help Desk Classic',
+            schema=schema_inc,
             entry_id=inc['id'],
             entry_values={
                 'Status': 'Pending',
@@ -110,7 +112,7 @@ def assign_incident(inc):
         )
 
         ars.update(
-            schema='HPD:Help Desk Classic',
+            schema=schema_inc,
             entry_id=inc['id'],
             entry_values={
                 'Status': 'Assigned',
@@ -145,7 +147,7 @@ def reassign_incident(inc, group):
         )
 
         ars.update(
-            schema='HPD:Help Desk Classic',
+            schema=schema_inc,
             entry_id=inc['id'],
             entry_values={
                 'Assigned Group': group_name,
@@ -155,7 +157,7 @@ def reassign_incident(inc, group):
 
         if group.upper() in ['OM', 'OV']:
             ars.update(
-                schema='HPD:Help Desk Classic',
+                schema=schema_inc,
                 entry_id=inc['id'],
                 entry_values={
                     'Categorization Tier 2': 'OM',
@@ -165,7 +167,7 @@ def reassign_incident(inc, group):
 
         elif group.upper() == 'NRA':
             ars.update(
-                schema='HPD:Help Desk Classic',
+                schema=schema_inc,
                 entry_id=inc['id'],
                 entry_values={
                     'Categorization Tier 2': 'NRA',
@@ -188,7 +190,7 @@ def update_summary(inc, summary):
         )
 
         ars.update(
-            schema='HPD:Help Desk Classic',
+            schema=schema_inc,
             entry_id=inc['id'],
             entry_values={
                 'Description': summary
@@ -210,7 +212,7 @@ def get_work_info(inc):
         )
 
         entries = ars.query(
-            schema='HPD:WorkLog',
+            schema=schema_wi,
             qualifier=""" 'Incident Number' = "%s" """ % inc['inc'],
             fields=['Description', 'Detailed Description', 'Submitter', 'Submit Date', 'Number of Attachments']
         )
@@ -248,7 +250,7 @@ def add_work_info(inc, wi_summary, wi_notes):
         )
 
         ars.create(
-            schema='HPD:WorkLog',
+            schema=schema_wi,
             entry_values={
                 'Work Log Type': 'General Information',
                 'Incident Number': inc['inc'],
@@ -319,14 +321,14 @@ def get_pending_incidents(groups):
             user=user, password=password
         )
 
-        qualifier = """'Status*' = "Pending" AND 'Status_Reason_Hidden' = "Problem" AND ("""
+        qualifier = """'Status' = "Pending" AND 'Status_Reason_Hidden' = "Problem" AND ("""
         for group in groups:
             qualifier += """'Assigned Group*+' = "%s" OR """ % group
         qualifier = qualifier[:-3]
         qualifier += ")"
 
         entries = ars.query(
-            schema='HPD:Help Desk Classic',
+            schema=schema_inc,
             qualifier=qualifier,
             fields=['Incident Number', 'Problem ID', 'Detailed Decription', 'Reported Date']
         )
