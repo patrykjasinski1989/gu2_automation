@@ -298,7 +298,8 @@ def process_3a(otsa, contract, inc):
     if contract['status'] == '3A' and contract['trans_num'] and \
             ('ponowione' in inc['summary'] or
              (contract['ncs_error_desc'] and 'Timeout' in contract['ncs_error_desc']) or
-             (contract['process_error'] and contract['process_error'] == -31000)):
+             (contract['process_error'] and contract['process_error'] == -31000) or
+             ('Proszę o zmianę w systemie zgody na TAK' in ' '.join(inc['notes']))):
         resolution += 'Umowa ' + str(contract['trans_num']) + ' zrealizowana.'
         return resolution
 

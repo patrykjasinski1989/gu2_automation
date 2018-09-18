@@ -218,13 +218,17 @@ def unlock_accounts():
         if not login:
             wi = get_work_info(inc)
             for entry in wi:
-                notes = ' '.join(entry['notes']).lower().split()
+                notes = ' '.join(entry['notes']).lower().replace(':', '').split()
                 if 'SD' in entry['summary'] and 'zdjęcie' in notes:
                     for word in 'lub odbicie na sd'.split():
                         if word in notes:
                             notes.remove(word)
                     if 'konta' in notes:
                         login = notes[notes.index('konta') + 1]
+                    elif 'loginu' in notes:
+                        login = notes[notes.index('loginu') + 1]
+                    elif 'logowania' in notes:
+                        login = notes[notes.index('logowania') + 1]
                     else:
                         login = notes[-1]
         # unlock account if login found
@@ -248,7 +252,8 @@ def close_pending_rsw():
         for i in range(len(lines)):
             if 'Numer telefonu klienta Orange / MSISDN' in lines[i] and i < len(lines) - 1:
                 msisdns = msisdn_regex.findall(lines[i+1])
-        msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
+        if msisdns:
+            msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
         if len(msisdns) != 1:
             continue
         else:
