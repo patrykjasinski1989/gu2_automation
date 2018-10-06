@@ -40,3 +40,23 @@ def get_latest_order(con, msisdn):
     else:
         dict_row = None
     return dict_row
+
+
+def add_entitlement(con, msisdn, offer_id=6021):
+    cur = con.cursor()
+    cur.execute("""
+    declare
+        v_msisdn rsw.rsw_zamowienia.dn_num%type := '{}';
+        v_id_oferty rsw.rsw_uprawnienia.id_oferty%type := '{}';
+        v_co_id rsw.rsw_zamowienia.co_id%type;
+        v_ins_prod_id rsw.rsw_zamowienia.ins_prod_id%type;
+    begin
+        select max(co_id) into v_co_id from rsw.rsw_zamowienia where dn_num = v_msisdn;
+        select max(ins_prod_id) into v_ins_prod_id from rsw.rsw_zamowienia where dn_num = v_msisdn;
+        insert into rsw.rsw_uprawnienia (co_id, co_expir_date, data_upawnienia, data_waznosci, user_id, id_oferty, staz, ins_prod_id, msisdn, ignorowanie_warunkow_oferty)
+        values (v_co_id, trunc(sysdate), trunc(sysdate), trunc(sysdate+365), 'matprotas', v_id_oferty, 52, v_ins_prod_id, v_msisdn, 1);
+        commit;
+    end;
+    """.format(msisdn, offer_id))
+    cur.close()
+    return 0

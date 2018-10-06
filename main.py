@@ -13,7 +13,7 @@ from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident, \
     update_summary, get_pending_incidents, assign_incident, get_schemas, get_fields
-from rsw import rsw_connection, get_latest_order
+from rsw import rsw_connection, get_latest_order, add_entitlement
 
 
 def unlock_imeis():
@@ -274,6 +274,43 @@ def close_pending_rsw():
     rsw.close()
 
 
+def offer_entitlement():
+    incidents = get_incidents(
+        'VC_BSS_MOBILE_RSW',
+        '000_incydent/awaria/uszkodzenie',
+        'RSW / nBUK',
+        'PROBLEMY Z OFERTĄ I TERMINALAMI'
+    )
+    msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
+    rsw = rsw_connection()
+    for inc in incidents:
+        resolution = ''
+        entitlement = False
+        prepaid = False
+        lines = inc['notes']
+        for i in range(len(lines)):
+            if 'Numer telefonu klienta Orange / MSISDN' in lines[i] and i < len(lines) - 1:
+                msisdns = msisdn_regex.findall(lines[i + 1])
+            if 'proszę o uprawnienie' in lines[i].lower():
+                entitlement = True
+            if 'prepaid' in lines[i].lower():
+                prepaid = True
+        if msisdns:
+            msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
+        if len(msisdns) != 1:
+            continue
+        else:
+            msisdn = msisdns[0]
+        if entitlement:
+            if prepaid:
+                add_entitlement(rsw, msisdn, 3624)
+            else:
+                add_entitlement(rsw, msisdn)
+            resolution = 'Numer {} uprawniony.'.format(msisdn)
+            close_incident(inc, resolution)
+            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
+
+
 def revert_inc_status():
     incidents = get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
@@ -301,7 +338,6 @@ def revert_inc_status():
 
 if __name__ == '__main__':
 
-
     lock_file = 'lock'
     if os.path.exists(lock_file):
         print('Lock file exists. Remove it to run the program.')
@@ -313,6 +349,7 @@ if __name__ == '__main__':
         release_resources()
         problems_with_offer()
         close_pending_rsw()
+        offer_entitlement()
     except cx_Oracle.DatabaseError as e:
         print('Database error: {}.\nCreating lock file and exiting...'.format(e))
         open(lock_file, 'w+')
