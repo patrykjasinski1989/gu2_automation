@@ -143,7 +143,7 @@ def process_2b(otsa, contract, inc):
         return resolution, wi
     if 'ponowione' in inc['summary']:
         resolution = 'Umowa ' + contract['trans_num'] + ' przekazana do realizacji.'
-    else:  # TODO Umowy TLS (trans_type like 'T%') do sprawdzenia w ML
+    elif contract['process_error'] != -31000:  # TODO Umowy TLS (trans_type like 'T%') do sprawdzenia w ML
         wi += 'Umowa {} (ncs_trans_num: {}, om_order_id: {}) w trakcie realizacji. Prośba o weryfikację w OM.'\
             .format(contract['trans_num'], contract['ncs_trans_num'], contract['om_order_id'])
         reassign_incident(inc, 'OM')

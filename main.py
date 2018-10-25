@@ -249,16 +249,18 @@ def close_pending_rsw():
     for inc in incidents:
         resolution = ''
         lines = inc['notes']
+        msisdns = None
+        last_order = None
         for i in range(len(lines)):
             if 'Numer telefonu klienta Orange / MSISDN' in lines[i] and i < len(lines) - 1:
                 msisdns = msisdn_regex.findall(lines[i+1])
         if msisdns:
             msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
-        if len(msisdns) != 1:
+        if msisdns and len(msisdns) != 1:
             continue
-        else:
+        elif msisdns:
             msisdn = msisdns[0]
-        last_order = get_latest_order(rsw, msisdn)
+            last_order = get_latest_order(rsw, msisdn)
         if last_order and last_order['data_zamowienia'] > inc['reported_date'] and last_order['ilosc_prob'] == 0:
             if last_order['status'] == 16 and last_order['status_om'] == 4:
                 resolution = 'Na podanym numerze {} jest już zrealizowane zamówienie {} z {}.'.\
@@ -287,6 +289,7 @@ def offer_entitlement():
         resolution = ''
         entitlement = False
         prepaid = False
+        msisdns = None
         lines = inc['notes']
         for i in range(len(lines)):
             if 'Numer telefonu klienta Orange / MSISDN' in lines[i] and i < len(lines) - 1:
@@ -297,9 +300,9 @@ def offer_entitlement():
                 prepaid = True
         if msisdns:
             msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
-        if len(msisdns) != 1:
+        if msisdns and len(msisdns) != 1:
             continue
-        else:
+        elif msisdns:
             msisdn = msisdns[0]
         if entitlement:
             if prepaid:
