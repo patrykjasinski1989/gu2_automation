@@ -357,3 +357,8 @@ if __name__ == '__main__':
         print('Database error: {}.\nCreating lock file and exiting...'.format(e))
         open(lock_file, 'w+')
         exit(666)
+    except paramiko.ssh_exception.AuthenticationException as e:
+        print('SSH error: {}.\nCreating lock file and exiting...'.fomat(e))
+        open(lock_file, 'w+')
+        exit(666)
+
