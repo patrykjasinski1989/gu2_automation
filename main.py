@@ -3,6 +3,7 @@ import os
 import re
 
 import cx_Oracle
+import paramiko
 from datetime import datetime
 from dateutil import parser
 
