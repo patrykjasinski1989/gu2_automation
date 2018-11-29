@@ -140,6 +140,10 @@ def reassign_incident(inc, group):
                  'VC_BSS_MOBILE_OV': 'SGP000000024585',
                  'Servicedesk - KONTA': 'SGP000000040569'}
 
+    work_info = get_work_info(inc)
+    if not is_work_info_empty(work_info):
+        return -1
+
     try:
         ars = ARS(
             server=server, port=port,
@@ -312,6 +316,13 @@ def has_attachment(work_info):
         if entry['attachments_cnt']:
             return True
     return False
+
+
+def is_work_info_empty(work_info):
+    if len(work_info) < 2:
+        return True
+    else:
+        return False
 
 
 def get_pending_incidents(groups):
