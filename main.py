@@ -293,7 +293,9 @@ def offer_entitlement():
         msisdns = None
         lines = inc['notes']
         for i in range(len(lines)):
-            if 'Numer telefonu klienta Orange / MSISDN' in lines[i] and i < len(lines) - 1:
+            if ('Numer telefonu klienta Orange / MSISDN' in lines[i] or
+                'Proszę podać numer MSISDN oraz numer koszyka z którym jest problem:' in lines[i]) \
+                    and i < len(lines) - 1:
                 msisdns = msisdn_regex.findall(lines[i + 1])
             if 'proszę o uprawnienie' in lines[i].lower():
                 entitlement = True
@@ -305,7 +307,7 @@ def offer_entitlement():
             continue
         elif msisdns:
             msisdn = msisdns[0]
-        if entitlement:
+        if msisdns and entitlement:
             if prepaid:
                 add_entitlement(rsw, msisdn, 3624)
             else:
