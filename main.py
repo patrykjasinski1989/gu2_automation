@@ -13,7 +13,7 @@ from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_stat
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident, \
-    update_summary, get_pending_incidents, assign_incident, get_schemas, get_fields
+    update_summary, get_pending_incidents, assign_incident, get_schemas, get_fields, get_all_incidents
 from rsw import rsw_connection, get_latest_order, add_entitlement
 
 
@@ -81,6 +81,7 @@ def process_transactions():
         if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
         if resolution != '' and all_resolved:
+            resolution = '\r\n'.join(list(set(resolution.split('\r\n')))).strip()
             close_incident(inc, resolution)
             print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
 
@@ -131,8 +132,8 @@ def release_resources():
                     add_work_info(inc, 'VC_OPTIPOS', wi_notes)
                     reassign_incident(inc, 'NRA')
             else:
-                partial_resolution = 'Karta SIM {0} powiązana z nieanulowaną umową {1}. Brak możliwości odblokowania.' \
-                                     'Proszę o kontakt z dealer support lub z działem reklamacji' \
+                partial_resolution = 'Karta SIM {0} powiązana z nieanulowaną umową {1}. Brak możliwości odblokowania. ' \
+                                     'Proszę o kontakt z dealer support lub z działem reklamacji.' \
                     .format(sim, result[0]['trans_num'])
             if partial_resolution != '':
                 resolution = resolution + '\r\n' + partial_resolution
@@ -142,8 +143,9 @@ def release_resources():
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
 
         if all_resolved and resolution != '':
+            resolution = '\r\n'.join(list(set(resolution.split('\r\n')))).strip()
             close_incident(inc, resolution)
-            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
+            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution))
     otsa.close()
 
 
@@ -317,6 +319,15 @@ def offer_entitlement():
             print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
 
 
+def empty_rsw_inc():
+    all_rsw_inc = get_all_incidents('VC_BSS_MOBILE_RSW')
+    for inc in all_rsw_inc:
+        if is_empty(inc):
+            resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
+            close_incident(inc, resolution)
+            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
+
+
 def revert_inc_status():
     incidents = get_incidents(
         'VC_BSS_MOBILE_OPTIPOS',
@@ -349,13 +360,14 @@ if __name__ == '__main__':
         print('Lock file exists. Remove it to run the program.')
         exit(666)
     try:
-        unlock_imeis()
+        #unlock_imeis()
         unlock_accounts()
         process_transactions()
         release_resources()
         problems_with_offer()
         close_pending_rsw()
         offer_entitlement()
+        empty_rsw_inc()
     except cx_Oracle.DatabaseError as e:
         print('Database error: {}.\nCreating lock file and exiting...'.format(e))
         open(lock_file, 'w+')

@@ -50,6 +50,41 @@ def get_incidents(group, tier1, tier2, tier3):
         ars.terminate()
 
 
+def get_all_incidents(group):
+    try:
+        ars = ARS(
+            server=server, port=port,
+            user=user, password=password
+        )
+
+        entries = ars.query(
+            schema=schema_inc,
+            qualifier=""" 'Status' = "Assigned" 
+                                 AND 'Assigned Group*+' = "%s" 
+                                 """ % group,
+            fields=['Incident Number', 'Detailed Decription', 'Description']
+        )
+
+        incidents = []
+        for entry_id, entry_values in entries:
+            for field, value in entry_values.items():
+                if field == 'Detailed Decription':
+                    notes = value.split('\n')
+                elif field == 'Incident Number':
+                    inc = value
+                elif field == 'Description':
+                    summary = value
+            incidents.append({'id': entry_id, 'inc': inc, 'notes': notes, 'summary': summary})
+
+        return incidents
+
+    except ARSError as e:
+        print('ERROR: {}'.format(e))
+        return e
+    finally:
+        ars.terminate()
+
+
 def close_incident(inc, resolution):
     try:
         ars = ARS(
@@ -139,10 +174,6 @@ def reassign_incident(inc, group):
                  'VC_BSS_MOBILE_NRA': 'SGP000000024570',
                  'VC_BSS_MOBILE_OV': 'SGP000000024585',
                  'Servicedesk - KONTA': 'SGP000000040569'}
-
-    work_info = get_work_info(inc)
-    if not is_work_info_empty(work_info):
-        return -1
 
     try:
         ars = ARS(

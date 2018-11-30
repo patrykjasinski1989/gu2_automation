@@ -3,12 +3,13 @@ import paramiko as paramiko
 
 import config
 from bscs import get_customer_id, bscs_connection, set_trans_no
+from ml import get_order_data, ml_connection
 from om import get_orders
 from optipos import get_cart_status, opti_connection, set_cart_status
 from otsa import search_msisdn, update_transaction, update_contract, fix_90100, fix_csc185, search_cart, \
     otsa_connection, fix_pesel, fix_csc178, fix_aac, fix_csc598, fix_csc598_cart, get_magnum_offers, \
     get_promotion_codes, search_trans_num
-from remedy import reassign_incident, update_summary, add_work_info
+from remedy import reassign_incident, update_summary, add_work_info, get_work_info, is_work_info_empty
 
 
 def process_msisdns(msisdns, trans_nums, inc):
@@ -143,11 +144,23 @@ def process_2b(otsa, contract, inc):
         return resolution, wi
     if 'ponowione' in inc['summary']:
         resolution = 'Umowa ' + contract['trans_num'] + ' przekazana do realizacji.'
-    elif contract['process_error'] != -31000:  # TODO Umowy TLS (trans_type like 'T%') do sprawdzenia w ML
-        wi += 'Umowa {} (ncs_trans_num: {}, om_order_id: {}) w trakcie realizacji. Prośba o weryfikację w OM.'\
-            .format(contract['trans_num'], contract['ncs_trans_num'], contract['om_order_id'])
-        reassign_incident(inc, 'OM')
-        resolution = ''
+    elif contract['process_error'] != -31000:
+        work_info = get_work_info(inc)
+        if not is_work_info_empty(work_info):
+            return '', ''
+
+        if contract['trans_type'][0] == 'T':
+            ml = ml_connection()
+            ml_order = get_order_data(ml, contract['msisdn'])
+            if ml_order['status'] != 'DELV':
+                resolution = 'Zamówienie przetwarzane w ML. Proszę swoje zgłoszenie przekierować na panel zarządzania łańcuchem dostaw: ' \
+                             'https://itsmweb.corp.tepenet/arsys/forms/itsm.corp.tepenet/TP%3ASKR%3AUserPage/ORANGE_ZLD/'
+            ml.close()
+        else:
+            wi += 'Umowa {} (ncs_trans_num: {}, om_order_id: {}) w trakcie realizacji. Prośba o weryfikację w OM.'\
+                .format(contract['trans_num'], contract['ncs_trans_num'], contract['om_order_id'])
+            reassign_incident(inc, 'OM')
+            resolution = ''
     return resolution, wi
 
 
@@ -162,6 +175,9 @@ def process_3c(otsa, contract, inc):
                 .format(contract['trans_code']))
         logs = ssh_stdout.readlines()
         if len(logs) == 2:
+            work_info = get_work_info(inc)
+            if not is_work_info_empty(work_info):
+                return ''
             work_info = 'Prośba o weryfikację: \r\n' + logs[0] + logs[1]
             add_work_info(inc, 'VC_OPTIPOS', work_info)
             reassign_incident(inc, 'OV')
@@ -222,10 +238,16 @@ def process_3c(otsa, contract, inc):
         return resolution
     elif contract['ncs_error_desc'] is not None and ('na zleceniu nie odpowiada' in contract['ncs_error_desc']
                                                      or 'nie jest dostepny' in contract['ncs_error_desc']):
+        work_info = get_work_info(inc)
+        if not is_work_info_empty(work_info):
+            return ''
         add_work_info(inc, 'VC_OPTIPOS', 'Prośba o weryfikację, MSISDN {}.'.format(contract['msisdn']))
         reassign_incident(inc, 'OV')
         resolution = ''
     elif contract['ncs_error_desc'] is not None and 'Voucher' in contract['ncs_error_desc']:
+        work_info = get_work_info(inc)
+        if not is_work_info_empty(work_info):
+            return ''
         add_work_info(inc, 'VC_OPTIPOS', 'Prośba o zmianę statusu vouchera, MSISDN {}.'.format(contract['msisdn']))
         reassign_incident(inc, 'OV')
         resolution = ''
