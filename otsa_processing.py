@@ -152,7 +152,7 @@ def process_2b(otsa, contract, inc):
         if contract['trans_type'][0] == 'T':
             ml = ml_connection()
             ml_order = get_order_data(ml, contract['msisdn'])
-            if ml_order['status'] != 'DELV':
+            if ml_order and ml_order['status'] != 'DELV':
                 resolution = 'Zamówienie przetwarzane w ML. Proszę swoje zgłoszenie przekierować na panel zarządzania łańcuchem dostaw: ' \
                              'https://itsmweb.corp.tepenet/arsys/forms/itsm.corp.tepenet/TP%3ASKR%3AUserPage/ORANGE_ZLD/'
             ml.close()
@@ -178,7 +178,7 @@ def process_3c(otsa, contract, inc):
             work_info = get_work_info(inc)
             if not is_work_info_empty(work_info):
                 return ''
-            work_info = 'Prośba o weryfikację: \r\n' + logs[0] + logs[1]
+            work_info = 'Prośba o weryfikację: \r\n' + logs[0] + '\r\n' + logs[1]
             add_work_info(inc, 'VC_OPTIPOS', work_info)
             reassign_incident(inc, 'OV')
         return ''
