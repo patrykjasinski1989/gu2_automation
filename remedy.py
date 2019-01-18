@@ -86,6 +86,8 @@ def get_all_incidents(group):
 
 
 def close_incident(inc, resolution):
+    resolution = '\n'.join(list(set(resolution.split('\n'))))
+
     try:
         ars = ARS(
             server=server, port=port,

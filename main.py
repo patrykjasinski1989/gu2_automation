@@ -13,7 +13,7 @@ from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_stat
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident, \
-    update_summary, get_pending_incidents, assign_incident, get_schemas, get_fields, get_all_incidents
+    update_summary, get_pending_incidents, assign_incident, get_all_incidents
 from rsw import rsw_connection, get_latest_order, add_entitlement
 
 
@@ -373,7 +373,7 @@ if __name__ == '__main__':
         open(lock_file, 'w+')
         exit(666)
     except paramiko.ssh_exception.AuthenticationException as e:
-        print('SSH error: {}.\nCreating lock file and exiting...'.fomat(e))
+        print('SSH error: {}.\nCreating lock file and exiting...'.format(e))
         open(lock_file, 'w+')
         exit(666)
 
