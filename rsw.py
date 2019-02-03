@@ -31,7 +31,8 @@ def set_order_status(con, order_id, status):
 def get_latest_order(con, msisdn):
     cur = con.cursor()
     cur.execute('select * from (select id_zamowienia, data_zamowienia, status, status_om, ilosc_prob '
-                "from rsw.rsw_zamowienia where dn_num = '{}') where rownum = 1".format(msisdn))
+                "from rsw.rsw_zamowienia where dn_num = '{}' order by data_zamowienia desc) where rownum = 1".format(
+        msisdn))
     row = cur.fetchone()
     cur.close()
     if cur.rowcount == 1:
