@@ -61,3 +61,22 @@ def add_entitlement(con, msisdn, offer_id=6021):
     """.format(msisdn, offer_id))
     cur.close()
     return 0
+
+
+def get_offer_id_by_name(con, offer_name):
+    offer_name = ''.join([c if ord(c) < 128 else '_' for c in offer_name])
+    cur = con.cursor()
+    stmt = """select id_oferty from rsw.rsw_oferty where lower(nazwa_oferty) like lower('%{}%')""".format(offer_name)
+    cur.execute(stmt)
+    _offer_id = cur.fetchone()
+    cur.close()
+    if _offer_id:
+        return _offer_id[0]
+    else:
+        return None
+
+
+if __name__ == '__main__':
+    rsw = rsw_connection()
+    offer_id = get_offer_id_by_name(rsw, '!Love 2ULTE Plan Komórkowy Prop')
+    print(offer_id)

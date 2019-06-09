@@ -14,7 +14,7 @@ from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident, \
     update_summary, get_pending_incidents, assign_incident, get_all_incidents
-from rsw import rsw_connection, get_latest_order, add_entitlement
+from rsw import rsw_connection, get_latest_order, add_entitlement, get_offer_id_by_name
 
 
 def unlock_imeis():
@@ -152,9 +152,9 @@ def release_resources():
 def problems_with_offer():
     incidents = get_incidents(
         'VC_BSS_MOBILE_RSW',
-        '000_incydent/awaria/uszkodzenie',
-        'RSW / nBUK',
-        'PROBLEMY Z OFERTĄ I TERMINALAMI'
+        '(357) RSW / nBUK',
+        '(357B) PROBLEMY Z OFERTĄ I TERMINALAMI',
+        'Orange Mobile, B2C, B2B, Love'
     )
     for inc in incidents:
         resolution = ''
@@ -282,9 +282,9 @@ def close_pending_rsw():
 def offer_entitlement():
     incidents = get_incidents(
         'VC_BSS_MOBILE_RSW',
-        '000_incydent/awaria/uszkodzenie',
-        'RSW / nBUK',
-        'PROBLEMY Z OFERTĄ I TERMINALAMI'
+        '(357) RSW / nBUK',
+        '(357B) PROBLEMY Z OFERTĄ I TERMINALAMI',
+        'Orange Mobile, B2C, B2B, Love'
     )
     msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
     rsw = rsw_connection()
@@ -293,13 +293,17 @@ def offer_entitlement():
         entitlement = False
         prepaid = False
         msisdns = None
+        offer_name = None
         lines = inc['notes']
         for i in range(len(lines)):
+            if 'Nazwa oferty' in lines[i]:
+                offer_name = lines[i + 1].strip()
+                offer_id = get_offer_id_by_name(rsw, offer_name)
             if ('Numer telefonu klienta Orange / MSISDN' in lines[i] or
                 'Proszę podać numer MSISDN oraz numer koszyka z którym jest problem:' in lines[i]) \
                     and i < len(lines) - 1:
                 msisdns = msisdn_regex.findall(lines[i + 1])
-            if 'proszę o uprawnienie' in lines[i].lower():
+            if 'proszę o uprawnienie' in lines[i].lower() or 'proszę o dodanie' in lines[i].lower():
                 entitlement = True
             if 'prepaid' in lines[i].lower():
                 prepaid = True
@@ -310,7 +314,9 @@ def offer_entitlement():
         elif msisdns:
             msisdn = msisdns[0]
         if msisdns and entitlement:
-            if prepaid:
+            if offer_id:
+                add_entitlement(rsw, msisdn, offer_id)
+            elif prepaid:
                 add_entitlement(rsw, msisdn, 3624)
             else:
                 add_entitlement(rsw, msisdn)
