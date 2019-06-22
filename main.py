@@ -9,6 +9,7 @@ from dateutil import parser
 from xlrd import open_workbook, cellname, xldate_as_tuple
 
 from eai import get_expiration_date, get_contract_data
+from ml import ml_connection
 from ml_sti import ml_sti_connection, recertify_account, create_account
 from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
 from otsa import otsa_connection, check_sim, unlock_account
@@ -361,6 +362,68 @@ def ml_wzmuk_sti():
     ml_sti.close()
 
 
+def ml_wzmuk():
+    incidents = get_incidents(
+        'VC_BSS_MOBILE_ML',
+        '(185) E-WZMUK-konto w SI Nowe/Modyfikacja/Likwidacja',
+        'M38 ML',
+        '40h'
+    )
+
+    ml = ml_connection()
+
+    for inc in incidents:
+        wi = get_work_info(inc)
+        filename, contents = wi[0]['attachment']
+
+        xls_file = open(filename, 'wb')
+        xls_file.write(contents)
+        xls_file.close()
+        book = open_workbook(filename)
+        sheet = book.sheet_by_name('Lista osób')
+
+        users = []
+        for row in range(8, sheet.nrows):
+            user = {}
+            for col in range(sheet.ncols):
+                if 'K' in cellname(row, col):
+                    user['login_ad'] = sheet.cell(row, col).value
+                elif 'S' in cellname(row, col):
+                    user['typ_wniosku'] = sheet.cell(row, col).value
+                elif 'T' in cellname(row, col):
+                    user['profil'] = sheet.cell(row, col).value
+                    if 'ML_' in user['profil']:
+                        user['profil'] = user['profil'][3:]
+                elif 'U' in cellname(row, col):
+                    date_value = xldate_as_tuple(sheet.cell(row, col).value, book.datemode)[:3]
+                    user['data_waznosci_konta'] = datetime(*date_value)
+                elif 'W' in cellname(row, col):
+                    user['przedluzenie_dostepu'] = sheet.cell(row, col).value
+            users.append(user)
+        os.remove(filename)
+
+        resolution = ''
+        for user in users:
+            if user['typ_wniosku'] == 'Modyfikacja uprawnień':
+                rows_updated = recertify_account(
+                    ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                if rows_updated == 1:
+                    resolution += 'Przedłużono dostęp do ML dla konta AD {} do dnia {}.\n'. \
+                        format(user['login_ad'], user['data_waznosci_konta'])
+                elif rows_updated == 0:
+                    rows_inserted = create_account(
+                        ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                    if rows_inserted == 1:
+                        resolution += 'Utworzono dostęp do ML dla konta AD {} z profilem {} do dnia {}.\n'. \
+                            format(user['login_ad'], user['profil'], user['data_waznosci_konta'])
+
+        if resolution:
+            close_incident(inc, resolution.strip())
+            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
+
+    ml.close()
+
+
 def empty_rsw_inc():
     all_rsw_inc = get_all_incidents('VC_BSS_MOBILE_RSW')
     for inc in all_rsw_inc:
@@ -409,6 +472,7 @@ if __name__ == '__main__':
         close_pending_rsw()
         offer_entitlement()
         empty_rsw_inc()
+        ml_wzmuk()
         ml_wzmuk_sti()
     except cx_Oracle.DatabaseError as e:
         print('Database error: {}.\nCreating lock file and exiting...'.format(e))
