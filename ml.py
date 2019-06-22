@@ -16,7 +16,8 @@ def get_order_data(con, msisdn):
     cur.execute(stmt)
     row = cur.fetchone()
     if cur.rowcount == 1:
-        result = {'msisdn': row[0], 'om_order_id': row[1], 'ml_id': row[2], 'status': row[3], 'last_status_change': row[4]}
+        result = {'msisdn': row[0], 'om_order_id': row[1], 'ml_id': row[2], 'status': row[3],
+                  'last_status_change': row[4]}
     else:
         result = None
     cur.close()

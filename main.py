@@ -6,43 +6,16 @@ import cx_Oracle
 import paramiko
 from datetime import datetime
 from dateutil import parser
+from xlrd import open_workbook, cellname, xldate_as_tuple
 
 from eai import get_expiration_date, get_contract_data
-from muchomor import unlock_imei
+from ml_sti import ml_sti_connection, recertify_account, create_account
 from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident, \
     update_summary, get_pending_incidents, assign_incident, get_all_incidents
 from rsw import rsw_connection, get_latest_order, add_entitlement, get_offer_id_by_name
-
-
-def unlock_imeis():
-    incidents = get_incidents(
-        'VC_BSS_MOBILE_OPTIPOS',
-        '000_incydent/awaria/uszkodzenie',
-        'OPTIPOS - OFERTA PTK',
-        'ODBLOKOWANIE IMEI'
-    )
-
-    imei_regex = re.compile('[a-zA-Z0-9]0{9,15}')
-    imeis = []
-
-    for inc in incidents:
-        lines = inc['notes']
-        for i in range(len(lines)):
-            if 'IMEI:' in lines[i]:
-                imeis = imei_regex.findall(lines[i + 1])
-                break
-        resolution = ''
-        if len(imeis) > 0:
-            for imei in imeis:
-                resolution += unlock_imei(imei.upper()) + '\n'
-        if is_empty(inc):
-            resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
-        if resolution.strip() != '':
-            close_incident(inc, resolution)
-            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
 
 
 def process_transactions():
@@ -73,8 +46,8 @@ def process_transactions():
         all_resolved = True
         for i in range(len(lines)):
             if 'Proszę podać numer MSISDN' in lines[i] or 'Numer telefonu klienta Orange / MSISDN' in lines[i]:
-                msisdns = msisdn_regex.findall(lines[i+1])
-                msisdns += msisdn_regex.findall(lines[i+2])
+                msisdns = msisdn_regex.findall(lines[i + 1])
+                msisdns += msisdn_regex.findall(lines[i + 2])
                 msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
                 trans_nums = trans_num_regex.findall(lines[i + 1])
                 resolution, all_resolved = process_msisdns(msisdns, trans_nums, inc)
@@ -157,8 +130,6 @@ def problems_with_offer():
         'Orange Mobile, B2C, B2B, Love'
     )
     for inc in incidents:
-        resolution = ''
-
         msisdn = ''
         msisdn_in_next_line = False
         offer_name = ''
@@ -258,7 +229,7 @@ def close_pending_rsw():
         last_order = None
         for i in range(len(lines)):
             if 'Numer telefonu klienta Orange / MSISDN' in lines[i] and i < len(lines) - 1:
-                msisdns = msisdn_regex.findall(lines[i+1])
+                msisdns = msisdn_regex.findall(lines[i + 1])
         if msisdns:
             msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
         if msisdns and len(msisdns) != 1:
@@ -268,10 +239,10 @@ def close_pending_rsw():
             last_order = get_latest_order(rsw, msisdn)
         if last_order and last_order['data_zamowienia'] > inc['reported_date'] and last_order['ilosc_prob'] == 0:
             if last_order['status'] == 16 and last_order['status_om'] == 4:
-                resolution = 'Na podanym numerze {} jest już zrealizowane zamówienie {} z {}.'.\
+                resolution = 'Na podanym numerze {} jest już zrealizowane zamówienie {} z {}.'. \
                     format(msisdn, last_order['id_zamowienia'], last_order['data_zamowienia'])
             elif last_order['status'] in (2, 3):
-                resolution = 'Na podanym numerze {} jest już zamówienie {} w trakcie realizacji w ML.'.\
+                resolution = 'Na podanym numerze {} jest już zamówienie {} w trakcie realizacji w ML.'. \
                     format(msisdn, last_order['id_zamowienia'])
         if resolution:
             assign_incident(inc)
@@ -325,6 +296,69 @@ def offer_entitlement():
             resolution = 'Numer {} uprawniony.'.format(msisdn)
             close_incident(inc, resolution)
             print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
+    rsw.close()
+
+
+def ml_wzmuk_sti():
+    incidents = get_incidents(
+        'VC_BSS_MOBILE_ML',
+        '(185) E-WZMUK-konto w SI Nowe/Modyfikacja/Likwidacja',
+        'M55 ML_STI',
+        '40h'
+    )
+
+    ml_sti = ml_sti_connection()
+
+    for inc in incidents:
+        wi = get_work_info(inc)
+        filename, contents = wi[0]['attachment']
+
+        xls_file = open(filename, 'wb')
+        xls_file.write(contents)
+        xls_file.close()
+        book = open_workbook(filename)
+        sheet = book.sheet_by_name('Lista osób')
+
+        users = []
+        for row in range(8, sheet.nrows):
+            user = {}
+            for col in range(sheet.ncols):
+                if 'K' in cellname(row, col):
+                    user['login_ad'] = sheet.cell(row, col).value
+                elif 'S' in cellname(row, col):
+                    user['typ_wniosku'] = sheet.cell(row, col).value
+                elif 'T' in cellname(row, col):
+                    user['profil'] = sheet.cell(row, col).value
+                    if 'ML_' in user['profil']:
+                        user['profil'] = user['profil'][3:]
+                elif 'U' in cellname(row, col):
+                    date_value = xldate_as_tuple(sheet.cell(row, col).value, book.datemode)[:3]
+                    user['data_waznosci_konta'] = datetime(*date_value)
+                elif 'W' in cellname(row, col):
+                    user['przedluzenie_dostepu'] = sheet.cell(row, col).value
+            users.append(user)
+        os.remove(filename)
+
+        resolution = ''
+        for user in users:
+            if user['typ_wniosku'] == 'Modyfikacja uprawnień':
+                rows_updated = recertify_account(
+                    ml_sti, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                if rows_updated == 1:
+                    resolution += 'Przedłużono dostęp do ML ŚTI dla konta AD {} do dnia {}.\n'. \
+                        format(user['login_ad'], user['data_waznosci_konta'])
+                elif rows_updated == 0:
+                    rows_inserted = create_account(
+                        ml_sti, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                    if rows_inserted == 1:
+                        resolution += 'Utworzono dostęp do ML ŚTI dla konta AD {} z profilem {} do dnia {}.\n'. \
+                            format(user['login_ad'], user['profil'], user['data_waznosci_konta'])
+
+        if resolution:
+            close_incident(inc, resolution.strip())
+            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
+
+    ml_sti.close()
 
 
 def empty_rsw_inc():
@@ -368,7 +402,6 @@ if __name__ == '__main__':
         print('Lock file exists. Remove it to run the program.')
         exit(666)
     try:
-        #unlock_imeis()
         unlock_accounts()
         process_transactions()
         release_resources()
@@ -376,6 +409,7 @@ if __name__ == '__main__':
         close_pending_rsw()
         offer_entitlement()
         empty_rsw_inc()
+        ml_wzmuk_sti()
     except cx_Oracle.DatabaseError as e:
         print('Database error: {}.\nCreating lock file and exiting...'.format(e))
         open(lock_file, 'w+')
@@ -384,4 +418,3 @@ if __name__ == '__main__':
         print('SSH error: {}.\nCreating lock file and exiting...'.format(e))
         open(lock_file, 'w+')
         exit(666)
-

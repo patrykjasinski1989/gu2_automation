@@ -5,8 +5,14 @@ cffi==1.11.5
 chardet==3.0.4
 cryptography==2.3
 cx-Oracle==6.3.1
+docopt==0.6.2
+et-xmlfile==1.0.1
 idna==2.6
+jdcal==1.4.1
+openpyxl==2.6.2
 paramiko==2.4.1
+pipdeptree==0.13.0
+pipreqs==0.4.9
 pyasn1==0.4.4
 pycparser==2.18
 PyNaCl==1.2.1
@@ -15,3 +21,5 @@ python-dateutil==2.7.3
 requests==2.18.4
 six==1.11.0
 urllib3==1.22
+xlrd==1.2.0
+yarg==0.1.9

@@ -114,8 +114,8 @@ def process_2y(otsa, contract, inc):
 
     if 'ponowione' in inc['summary']:
         resolution = 'Umowa ' + contract['trans_num'] + ' wstrzymana po stronie OM. ' \
-                     'Jest to poprawny biznesowo status. Proszę anulować lub zatwierdzić. ' \
-                     'W razie kłopotów proszę o kontakt z Dealer Support'
+                                                        'Jest to poprawny biznesowo status. Proszę anulować lub zatwierdzić. ' \
+                                                        'W razie kłopotów proszę o kontakt z Dealer Support'
         return resolution
 
     orders = get_orders(contract['msisdn'])
@@ -157,7 +157,7 @@ def process_2b(otsa, contract, inc):
                              'https://itsmweb.corp.tepenet/arsys/forms/itsm.corp.tepenet/TP%3ASKR%3AUserPage/ORANGE_ZLD/'
             ml.close()
         else:
-            wi += 'Umowa {} (ncs_trans_num: {}, om_order_id: {}) w trakcie realizacji. Prośba o weryfikację w OM.'\
+            wi += 'Umowa {} (ncs_trans_num: {}, om_order_id: {}) w trakcie realizacji. Prośba o weryfikację w OM.' \
                 .format(contract['trans_num'], contract['ncs_trans_num'], contract['om_order_id'])
             reassign_incident(inc, 'OM')
             resolution = ''

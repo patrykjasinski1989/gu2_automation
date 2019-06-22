@@ -10,6 +10,7 @@ user = config.remedy['user']
 password = config.remedy['password']
 schema_inc = 'HPD:Help Desk'
 schema_wi = 'HPD:WorkLog'
+schema_attachments = 'HPD:Attachments'
 
 
 def get_incidents(group, tier1, tier2, tier3):
@@ -32,8 +33,9 @@ def get_incidents(group, tier1, tier2, tier3):
 
         incidents = []
         for entry_id, entry_values in entries:
+            notes = ''
             for field, value in entry_values.items():
-                if field == 'Detailed Decription':
+                if field == 'Detailed Decription' and value:
                     notes = value.split('\n')
                 elif field == 'Incident Number':
                     inc = value
@@ -126,8 +128,8 @@ def hold_incident(inc, resolution):
             entry_values={
                 'Status': 'Pending',
                 'Status_Reason': 'Requester Information',
-                'Estimated Resolution Date': datetime(2018, 4, 14, 14, 4, 48), # TODO doesn't work, is null
-                    #(datetime.now() + timedelta((5-datetime.now().weekday()) % 7)).strftime("%Y-%m-%d %H:%M:%S"),
+                'Estimated Resolution Date': datetime(2018, 4, 14, 14, 4, 48),  # TODO doesn't work, is null
+                # (datetime.now() + timedelta((5-datetime.now().weekday()) % 7)).strftime("%Y-%m-%d %H:%M:%S"),
                 'Assignee': 'PATRYK JASIŃSKI',
                 'Assignee Login ID': 'jasinpa4',
                 'Resolution': resolution
@@ -166,7 +168,6 @@ def assign_incident(inc):
 
 
 def reassign_incident(inc, group):
-
     if '_' not in group and 'Servicedesk' not in group:
         group_name = 'VC_BSS_MOBILE_' + group.upper()
     else:
@@ -251,10 +252,11 @@ def get_work_info(inc):
         entries = ars.query(
             schema=schema_wi,
             qualifier=""" 'Incident Number' = "%s" """ % inc['inc'],
-            fields=['Description', 'Detailed Description', 'Submitter', 'Submit Date', 'Number of Attachments']
+            fields=['Description', 'Detailed Description', 'Submitter', 'Submit Date',
+                    'Number of Attachments', 'z2AF Work Log01']
         )
 
-        incidents = []
+        wi = []
         for entry_id, entry_values in entries:
             for field, value in entry_values.items():
                 if field == 'Description':
@@ -267,10 +269,12 @@ def get_work_info(inc):
                     submit_date = value
                 elif field == 'Number of Attachments':
                     attachments_cnt = value
-            incidents.append({'summary': summary, 'notes': notes, 'submitter': submitter, 'submit_date': submit_date,
-                              'attachments_cnt': attachments_cnt})
+                elif field == 'z2AF Work Log01':
+                    attachment = value
+            wi.append({'summary': summary, 'notes': notes, 'submitter': submitter, 'submit_date': submit_date,
+                       'attachments_cnt': attachments_cnt, 'attachment': attachment})
 
-        return incidents
+        return wi
 
     except ARSError as e:
         print('ERROR: {}'.format(e))
@@ -339,7 +343,7 @@ def is_empty(inc):
             and '---[ dane identyfikacyjne komputera ]---' in lines[1] \
             and 'Lokalizacja: ' in lines[3] \
             and 'Telefony kontaktowe:' in lines[4]:
-                return True
+        return True
     else:
         return False
 

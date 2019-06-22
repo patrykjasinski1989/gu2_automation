@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import requests
 
-from rsw import rsw_connection, get_order_id, set_order_status
 import config
+from rsw import rsw_connection, get_order_id, set_order_status
 
 
 def unlock_imei(imei):
@@ -11,10 +11,10 @@ def unlock_imei(imei):
     url = config.muchomor['url']
     s = requests.session()
     try:
-        s.get(url=url+'pagIMEI.jsf', proxies=proxies, timeout=2)
-        s.post(url=url+'j_security_check', proxies=proxies,
+        s.get(url=url + 'pagIMEI.jsf', proxies=proxies, timeout=2)
+        s.post(url=url + 'j_security_check', proxies=proxies,
                data={'j_username': config.muchomor['user'], 'j_password': config.muchomor['password']})
-        response = s.get(url=url+'pagIMEI.jsf', proxies=proxies)
+        response = s.get(url=url + 'pagIMEI.jsf', proxies=proxies)
         javax_faces = response.text.split('id="javax.faces.ViewState" value="')[1].split('"')[0]
     except Exception:
         return ''
@@ -38,7 +38,7 @@ def unlock_imei(imei):
         'j_id_jsp_625197284_1:_idcl': 'j_id_jsp_625197284_1:j_id_jsp_625197284_13'
     }
 
-    response = s.post(url=url+'pagIMEI.jsf', proxies=proxies, data=payload)
+    response = s.post(url=url + 'pagIMEI.jsf', proxies=proxies, data=payload)
     if 'messageForUser' in response.text:
         result = response.text.split('<span class="messageForUser">')[1].split('</span>')[0]
     else:
@@ -48,7 +48,7 @@ def unlock_imei(imei):
         resolution = 'Nie znaleziono terminala %s. Prosze podac poprawny IMEI.' % imei
     elif 'Nie mo&#380;na odblokowa&#263;,' in result:
         if 'RSW' in result:
-            msisdn = response.text.split('<tr><td>'+imei+'</td><td>')[-1].split('</td>')[0]
+            msisdn = response.text.split('<tr><td>' + imei + '</td><td>')[-1].split('</td>')[0]
             resolution = result + ', na numerze MSISDN: ' + msisdn + '.'
             if 'Reklamacja' in result:
                 rsw = rsw_connection()
@@ -58,11 +58,11 @@ def unlock_imei(imei):
                 set_order_status(rsw, order_id, '5')
                 rsw.close()
     elif 'Mo&#380;na odblokowa&#263;,' in result:
-        response = s.post(url=url+'pagIMEI.jsf', proxies=proxies, data=payload2)
+        response = s.post(url=url + 'pagIMEI.jsf', proxies=proxies, data=payload2)
         resolution = response.text.split('<span class="messageForUser">')[1].split('</span>')[0]
     elif 'Sprzedawca powinien ' in result:
-        resolution = 'Terminal ' + imei +' aktywny w IFS. Proszę o kontakt z działem refundacji ' \
-                   'lub z centralą agenta w przypadku salonów agencyjnych.'
+        resolution = 'Terminal ' + imei + ' aktywny w IFS. Proszę o kontakt z działem refundacji ' \
+                                          'lub z centralą agenta w przypadku salonów agencyjnych.'
     elif 'Terminal odblokowany' in result:
         resolution = 'Terminal ' + imei + ' odblokowany.'
     elif 'Nie znaleziono terminala' in result:
@@ -71,4 +71,3 @@ def unlock_imei(imei):
         resolution = result
 
     return resolution
-

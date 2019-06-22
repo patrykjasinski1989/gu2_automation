@@ -10,7 +10,6 @@ password = config.om['password']
 
 
 def get_orders(key):
-
     s = requests.session()
     url = '{}/PtkOMConsole/requests/ordersByKey.dsp?key={}'.format(server, key)
     response = s.get(url=url, auth=HTTPBasicAuth(user, password), timeout=3)
@@ -25,7 +24,7 @@ def get_orders(key):
                 _values.append(lines[i].split('>')[1].split('<')[0])
                 _cnt += 1
             else:
-                _values.append(lines[i+1].split('>')[1].split('<')[0])
+                _values.append(lines[i + 1].split('>')[1].split('<')[0])
                 _cnt += 1
         if _cnt == 6:
             _order = {'id': _values[0], 'type': _values[1], 'channel': _values[2], 'status': _values[3],
