@@ -10,7 +10,7 @@ from xlrd import open_workbook, cellname, xldate_as_tuple
 
 from eai import get_expiration_date, get_contract_data
 from ml import ml_connection
-from ml_sti import ml_sti_connection, recertify_account, create_account
+from ml_sti import ml_sti_connection, recertify_account, create_account, delete_account
 from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
@@ -354,6 +354,10 @@ def ml_wzmuk_sti():
                     if rows_inserted == 1:
                         resolution += 'Utworzono dostęp do ML ŚTI dla konta AD {} z profilem {} do dnia {}.\n'. \
                             format(user['login_ad'], user['profil'], user['data_waznosci_konta'])
+            elif user['typ_wniosku'] == 'Likwidacja konta':
+                rows_updated = delete_account(ml_sti, user['login_ad'], inc)
+                if rows_updated == 1:
+                    resolution += 'Usunięto dostęp do ML ŚTI dla konta AD {}.\n'.format(user['login_ad'])
 
         if resolution:
             close_incident(inc, resolution.strip())
@@ -416,6 +420,10 @@ def ml_wzmuk():
                     if rows_inserted == 1:
                         resolution += 'Utworzono dostęp do ML dla konta AD {} z profilem {} do dnia {}.\n'. \
                             format(user['login_ad'], user['profil'], user['data_waznosci_konta'])
+            elif user['typ_wniosku'] == 'Likwidacja konta':
+                rows_updated = delete_account(ml, user['login_ad'], inc)
+                if rows_updated == 1:
+                    resolution += 'Usunięto dostęp do ML dla konta AD {}.\n'.format(user['login_ad'])
 
         if resolution:
             close_incident(inc, resolution.strip())
