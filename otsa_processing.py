@@ -184,8 +184,8 @@ def process_3c(otsa, contract, inc):
         return ''
 
     if contract['process_error'] == 103199:
-        resolution = 'Tak wygląda proces sprzedażowy dla Magnumów. Jeśli nie było logistyki (w OM lub w kanale), ' \
-                     'to zlecenie MV musi być zawieszone w OM (HALTED) i dopiero wtedy można złożyć zlecenie DATA.'
+        resolution = 'Druga noga zamówienia nie znajduje sie w statusie HALTED w OM co jest wymagane przy MAGNUM, ' \
+                     'proszę ponownie wypisać całość. W razie wątpliwości proszę o kontakt z Dealer Support.\n'
     elif contract['process_error'] == 90100:
         if 'BSCS (47 - blad wewnetrzny systemu)' in contract['ncs_error_desc']:
             bscs = bscs_connection()
