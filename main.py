@@ -14,25 +14,26 @@ from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_stat
 from otsa import otsa_connection, check_sim, unlock_account
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident, \
-    update_summary, get_pending_incidents, assign_incident, get_all_incidents
+    get_pending_incidents, assign_incident, get_all_incidents
 from rsw import rsw_connection, get_latest_order, add_entitlement, get_offer_id_by_name
 
 
 def process_transactions():
+
     incidents = get_incidents(
-        'VC_BSS_MOBILE_OPTIPOS',
+        'VC3_BSS_OPTIPOS_MOBILE',
         '000_incydent/awaria/uszkodzenie',
         'OPTIPOS - OFERTA PTK',
         'AKTYWACJA KLIENTA'
     )
     incidents += get_incidents(
-        'VC_BSS_MOBILE_OPTIPOS',
+        'VC3_BSS_OPTIPOS_MOBILE',
         '000_incydent/awaria/uszkodzenie',
         'OPTIPOS - OFERTA PTK',
         'MIGRACJA KLIENTA'
     )
     incidents += get_incidents(
-        'VC_BSS_MOBILE_OPTIPOS',
+        'VC3_BSS_OPTIPOS_MOBILE',
         '000_incydent/awaria/uszkodzenie',
         'OPTIPOS - OFERTA PTK',
         'SPRZEDAZ USLUG'
@@ -61,7 +62,7 @@ def process_transactions():
 
 def release_resources():
     incidents = get_incidents(
-        'VC_BSS_MOBILE_OPTIPOS',
+        'VC3_BSS_OPTIPOS_MOBILE',
         '000_incydent/awaria/uszkodzenie',
         'OTSA',
         'UWOLNIENIE ZASOBOW'
@@ -124,11 +125,12 @@ def release_resources():
 
 def problems_with_offer():
     incidents = get_incidents(
-        'VC_BSS_MOBILE_RSW',
+        'VC3_BSS_RSW',
         '(357) RSW / nBUK',
         '(357B) PROBLEMY Z OFERTĄ I TERMINALAMI',
         'Orange Mobile, B2C, B2B, Love'
     )
+
     for inc in incidents:
         msisdn = ''
         msisdn_in_next_line = False
@@ -160,16 +162,17 @@ def problems_with_offer():
 
 def unlock_accounts():
     incidents = get_incidents(
-        'VC_BSS_MOBILE_OPTIPOS',
+        'VC3_BSS_OPTIPOS_MOBILE',
         '000_incydent/awaria/uszkodzenie',
         'OTSA/OPTIPOS',
         'ODBLOKOWANIE KONTA'
     )
+
     sd_tiers = ['OKI i SOHO - AKTYWACJA KONTA', '[DETAL PTK] KKB,ADT - AKTYWACJA KONTA',
                 '[DETAL TP] DEALER SUPPORT - AKTYWACJA KONTA', 'ZŁD Aktywacja/Modyfikacja konta']
     for tier3 in sd_tiers:
         incidents += get_incidents(
-            'VC_BSS_MOBILE_OPTIPOS',
+            'VC3_BSS_OPTIPOS_MOBILE',
             '000_wniosek o dostęp/instalację/dostarczenie',
             'OTSA/OPTIPOS',
             tier3
@@ -219,7 +222,7 @@ def unlock_accounts():
 
 
 def close_pending_rsw():
-    incidents = get_pending_incidents(['VC_BSS_MOBILE_RSW'])
+    incidents = get_pending_incidents(['VC3_BSS_RSW'])
     msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
     rsw = rsw_connection()
     for inc in incidents:
@@ -254,11 +257,12 @@ def close_pending_rsw():
 
 def offer_entitlement():
     incidents = get_incidents(
-        'VC_BSS_MOBILE_RSW',
+        'VC3_BSS_RSW',
         '(357) RSW / nBUK',
         '(357B) PROBLEMY Z OFERTĄ I TERMINALAMI',
         'Orange Mobile, B2C, B2B, Love'
     )
+
     msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
     rsw = rsw_connection()
     for inc in incidents:
@@ -301,7 +305,7 @@ def offer_entitlement():
 
 def ml_wzmuk_sti():
     incidents = get_incidents(
-        'VC_BSS_MOBILE_ML',
+        'VC3_BSS_ML',
         '(185) E-WZMUK-konto w SI Nowe/Modyfikacja/Likwidacja',
         'M55 ML_STI',
         '40h'
@@ -357,6 +361,8 @@ def ml_wzmuk_sti():
                 rows_updated = delete_account(ml_sti, user['login_ad'], inc)
                 if rows_updated == 1:
                     resolution += 'Usunięto dostęp do ML ŚTI dla konta AD {}.\n'.format(user['login_ad'])
+                elif rows_updated == 0:
+                    resolution += 'Brak dostępu do ML ŚTI dla konta AD {}.\n'.format(user['login_ad'])
 
         if resolution:
             close_incident(inc, resolution.strip())
@@ -366,37 +372,12 @@ def ml_wzmuk_sti():
 
 
 def empty_rsw_inc():
-    all_rsw_inc = get_all_incidents('VC_BSS_MOBILE_RSW')
+    all_rsw_inc = get_all_incidents('VC3_BSS_RSW')
     for inc in all_rsw_inc:
         if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
             close_incident(inc, resolution)
             print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
-
-
-def revert_inc_status():
-    incidents = get_incidents(
-        'VC_BSS_MOBILE_OPTIPOS',
-        '000_incydent/awaria/uszkodzenie',
-        'OPTIPOS - OFERTA PTK',
-        'AKTYWACJA KLIENTA'
-    )
-    incidents += get_incidents(
-        'VC_BSS_MOBILE_OPTIPOS',
-        '000_incydent/awaria/uszkodzenie',
-        'OPTIPOS - OFERTA PTK',
-        'MIGRACJA KLIENTA'
-    )
-    incidents += get_incidents(
-        'VC_BSS_MOBILE_OPTIPOS',
-        '000_incydent/awaria/uszkodzenie',
-        'OPTIPOS - OFERTA PTK',
-        'SPRZEDAZ USLUG'
-    )
-
-    for inc in incidents:
-        if 'ponowione3' in inc['summary']:
-            update_summary(inc, 'ponowione2')
 
 
 if __name__ == '__main__':

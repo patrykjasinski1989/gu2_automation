@@ -169,13 +169,16 @@ def assign_incident(inc):
 
 def reassign_incident(inc, group):
     if '_' not in group and 'Servicedesk' not in group:
-        group_name = 'VC_BSS_MOBILE_' + group.upper()
+        group_name = 'VC3_BSS_' + group.upper()
+        if 'OM' in group.upper():
+            group_name += '_PTK'
     else:
         group_name = group
 
-    group_ids = {'VC_BSS_MOBILE_OM': 'SGP000000024567',
-                 'VC_BSS_MOBILE_NRA': 'SGP000000024570',
-                 'VC_BSS_MOBILE_OV': 'SGP000000024585',
+    group_ids = {
+        'VC3_BSS_OM_PTK': 'SGP000000051464',
+        'VC3_BSS_NRA': 'SGP000000051463',
+        'VC3_BSS_OV': 'SGP000000051269',
                  'Servicedesk - KONTA': 'SGP000000040569'}
 
     try:
