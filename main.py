@@ -357,6 +357,20 @@ def ml_wzmuk_sti():
                     if rows_inserted == 1:
                         resolution += 'Utworzono dostęp do ML ŚTI dla konta AD {} z profilem {} do dnia {}.\n'. \
                             format(user['login_ad'], user['profil'], user['data_waznosci_konta'])
+
+            elif user['typ_wniosku'] == 'Nowe konto':
+                rows_inserted = create_account(
+                    ml_sti, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                if rows_inserted == 1:
+                    resolution += 'Utworzono dostęp do ML ŚTI dla konta AD {} z profilem {} do dnia {}.\n'. \
+                        format(user['login_ad'], user['profil'], user['data_waznosci_konta'])
+                elif rows_inserted == 0:
+                    rows_updated = recertify_account(
+                        ml_sti, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                    if rows_updated == 1:
+                        resolution += 'Przedłużono dostęp do ML ŚTI dla konta AD {} do dnia {}.\n'. \
+                            format(user['login_ad'], user['data_waznosci_konta'])
+
             elif user['typ_wniosku'] == 'Likwidacja konta':
                 rows_updated = delete_account(ml_sti, user['login_ad'], inc)
                 if rows_updated == 1:

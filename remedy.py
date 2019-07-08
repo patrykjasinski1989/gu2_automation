@@ -13,7 +13,7 @@ schema_wi = 'HPD:WorkLog'
 schema_attachments = 'HPD:Attachments'
 
 
-def get_incidents(group: object, tier1: object, tier2: object, tier3: object) -> object:
+def get_incidents(group, tier1, tier2, tier3):
     try:
         ars = ARS(
             server=server, port=port,
