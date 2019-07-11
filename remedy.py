@@ -404,3 +404,40 @@ def get_pending_incidents(groups):
         return e
     finally:
         ars.terminate()
+
+
+def get_resolved_incidents(groups):
+    try:
+        ars = ARS(
+            server=server, port=port,
+            user=user, password=password
+        )
+
+        qualifier = """'Status' = "Resolved" AND ("""
+        for group in groups:
+            qualifier += """'Assigned Group*+' = "%s" OR """ % group
+        qualifier = qualifier[:-3]
+        qualifier += ")"
+
+        entries = ars.query(
+            schema=schema_inc,
+            qualifier=qualifier,
+            fields=['Assigned Group', 'Assignee']
+        )
+
+        incidents = []
+        for entry_id, entry_values in entries:
+            for field, value in entry_values.items():
+                if field == 'Assigned Group':
+                    assigned_group = value
+                elif field == 'Assignee':
+                    assignee = value
+            incidents.append({'assigned_group': assigned_group, 'assignee': assignee})
+
+        return incidents
+
+    except ARSError as e:
+        print('ERROR: {}'.format(e))
+        return e
+    finally:
+        ars.terminate()
