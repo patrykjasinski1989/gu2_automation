@@ -4,9 +4,8 @@ from remedy import get_pending_incidents
 
 if __name__ == "__main__":
 
-    groups = ['VC_BSS_MOBILE_OPTIPOS', 'VC_BSS_MOBILE_RSW', 'VC_BSS_MOBILE_CDT', 'VC_BSS_MOBILE_SIS',
-              'VC_BSS_MOBILE_BK-MERITUM', 'VC_BSS_MOBILE_ML', 'VC_BSS_MOBILE_CV', 'VC_BSS_MOBILE_BLV',
-              'VC_BSS_MOBILE_BLACKCHECK']
+    groups = ['CDT', 'CV', 'ML', 'OPTIPOS_FIX', 'OPTIPOS_MOBILE', 'RSW', 'SIS']
+    groups = ['VC3_BSS_' + g for g in groups]
 
     pbi_counter = {}
     incidents = get_pending_incidents(groups)
@@ -19,7 +18,6 @@ if __name__ == "__main__":
             pbi_counter[pbi] = 1
 
     for pbi, count in sorted(pbi_counter.items(), key=operator.itemgetter(1), reverse=True):
-        if count > 5:
-            print(pbi, count)
+        print(pbi, count)
     print('-' * 80)
     print('total:', len(incidents))
