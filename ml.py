@@ -4,7 +4,7 @@ import cx_Oracle
 import config
 
 
-def ml_connection():
+def ml_prod_connection():
     return cx_Oracle.connect(user=config.ml['user'], password=config.ml['password'], dsn=config.ml['server'])
 
 
@@ -22,10 +22,3 @@ def get_order_data(con, msisdn):
         result = None
     cur.close()
     return result
-
-
-if __name__ == '__main__':
-    ml = ml_connection()
-    order = get_order_data(ml, 798841486)
-    ml.close()
-    print(order)

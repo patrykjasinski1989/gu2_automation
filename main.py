@@ -9,6 +9,7 @@ from dateutil import parser
 from xlrd import open_workbook, cellname, xldate_as_tuple
 
 from eai import get_expiration_date, get_contract_data
+from ml import ml_prod_connection
 from ml_sti import ml_sti_connection, recertify_account, create_account, delete_account
 from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
 from otsa import otsa_connection, check_sim, unlock_account
@@ -303,15 +304,27 @@ def offer_entitlement():
     rsw.close()
 
 
-def ml_wzmuk_sti():
+def map_profile_to_db(profile_name):
+    profile_name_lower = profile_name.lower()
+    db_profile = None
+    if 'dealer' in profile_name_lower and 'support' in profile_name_lower:
+        db_profile = 'DS_Orange_Love'
+    elif 'read_only' in profile_name_lower and 'pickup' not in profile_name_lower:
+        db_profile = 'Read_only'
+    elif 'ML_' in profile_name:
+        db_profile = profile_name[3:]
+    return db_profile
+
+
+def process_ml_wzmuks(tier2, ml_connection, env_name):
     incidents = get_incidents(
         'VC3_BSS_ML',
         '(185) E-WZMUK-konto w SI Nowe/Modyfikacja/Likwidacja',
-        'M55 ML_STI',
+        tier2,
         '40h'
     )
 
-    ml_sti = ml_sti_connection()
+    ml = ml_connection()
 
     for inc in incidents:
         wi = get_work_info(inc)
@@ -332,9 +345,8 @@ def ml_wzmuk_sti():
                 elif 'S' in cellname(row, col):
                     user['typ_wniosku'] = sheet.cell(row, col).value
                 elif 'T' in cellname(row, col):
-                    user['profil'] = sheet.cell(row, col).value
-                    if 'ML_' in user['profil']:
-                        user['profil'] = user['profil'][3:]
+                    profile = sheet.cell(row, col).value
+                    user['profil'] = map_profile_to_db(profile)
                 elif 'U' in cellname(row, col):
                     date_value = xldate_as_tuple(sheet.cell(row, col).value, book.datemode)[:3]
                     user['data_waznosci_konta'] = datetime(*date_value)
@@ -347,42 +359,50 @@ def ml_wzmuk_sti():
         for user in users:
             if user['typ_wniosku'] == 'Modyfikacja uprawnień':
                 rows_updated = recertify_account(
-                    ml_sti, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                    ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
                 if rows_updated == 1:
-                    resolution += 'Przedłużono dostęp do ML ŚTI dla konta AD {} do dnia {}.\n'. \
-                        format(user['login_ad'], user['data_waznosci_konta'])
+                    resolution += 'Przedłużono dostęp do {} dla konta AD {} do dnia {}.\n'. \
+                        format(env_name, user['login_ad'], user['data_waznosci_konta'])
                 elif rows_updated == 0:
                     rows_inserted = create_account(
-                        ml_sti, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                        ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
                     if rows_inserted == 1:
-                        resolution += 'Utworzono dostęp do ML ŚTI dla konta AD {} z profilem {} do dnia {}.\n'. \
-                            format(user['login_ad'], user['profil'], user['data_waznosci_konta'])
+                        resolution += 'Utworzono dostęp do {} dla konta AD {} z profilem {} do dnia {}.\n'. \
+                            format(env_name, user['login_ad'], user['profil'], user['data_waznosci_konta'])
 
             elif user['typ_wniosku'] == 'Nowe konto':
                 rows_inserted = create_account(
-                    ml_sti, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                    ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
                 if rows_inserted == 1:
-                    resolution += 'Utworzono dostęp do ML ŚTI dla konta AD {} z profilem {} do dnia {}.\n'. \
-                        format(user['login_ad'], user['profil'], user['data_waznosci_konta'])
+                    resolution += 'Utworzono dostęp do {} dla konta AD {} z profilem {} do dnia {}.\n'. \
+                        format(env_name, user['login_ad'], user['profil'], user['data_waznosci_konta'])
                 elif rows_inserted == 0:
                     rows_updated = recertify_account(
-                        ml_sti, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                        ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
                     if rows_updated == 1:
-                        resolution += 'Przedłużono dostęp do ML ŚTI dla konta AD {} do dnia {}.\n'. \
-                            format(user['login_ad'], user['data_waznosci_konta'])
+                        resolution += 'Przedłużono dostęp do {} dla konta AD {} do dnia {}.\n'. \
+                            format(env_name, user['login_ad'], user['data_waznosci_konta'])
 
             elif user['typ_wniosku'] == 'Likwidacja konta':
-                rows_updated = delete_account(ml_sti, user['login_ad'], inc)
+                rows_updated = delete_account(ml, user['login_ad'], inc)
                 if rows_updated == 1:
-                    resolution += 'Usunięto dostęp do ML ŚTI dla konta AD {}.\n'.format(user['login_ad'])
+                    resolution += 'Usunięto dostęp do {} dla konta AD {}.\n'.format(env_name, user['login_ad'])
                 elif rows_updated == 0:
-                    resolution += 'Brak dostępu do ML ŚTI dla konta AD {}.\n'.format(user['login_ad'])
+                    resolution += 'Brak dostępu do {} dla konta AD {}.\n'.format(env_name, user['login_ad'])
 
         if resolution:
             close_incident(inc, resolution.strip())
             print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
 
-    ml_sti.close()
+    ml.close()
+
+
+def ml_wzmuk_sti():
+    process_ml_wzmuks(tier2='M55 ML_STI', ml_connection=ml_sti_connection, env_name='ML ŚTI')
+
+
+def ml_wzmuk_prod():
+    process_ml_wzmuks(tier2='M38 ML', ml_connection=ml_prod_connection, env_name='ML PROD')
 
 
 def empty_rsw_inc():
@@ -409,6 +429,7 @@ if __name__ == '__main__':
         offer_entitlement()
         empty_rsw_inc()
         ml_wzmuk_sti()
+        ml_wzmuk_prod()
     except cx_Oracle.DatabaseError as e:
         print('Database error: {}.\nCreating lock file and exiting...'.format(e))
         open(lock_file, 'w+')

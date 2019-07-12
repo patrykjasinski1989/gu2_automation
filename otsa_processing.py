@@ -3,7 +3,7 @@ import paramiko as paramiko
 
 import config
 from bscs import get_customer_id, bscs_connection, set_trans_no
-from ml import get_order_data, ml_connection
+from ml import get_order_data, ml_prod_connection
 from om import get_orders
 from optipos import get_cart_status, opti_connection, set_cart_status
 from otsa import search_msisdn, update_transaction, update_contract, fix_90100, fix_csc185, search_cart, \
@@ -150,7 +150,7 @@ def process_2b(otsa, contract, inc):
             return '', ''
 
         if contract['trans_type'][0] == 'T':
-            ml = ml_connection()
+            ml = ml_prod_connection
             ml_order = get_order_data(ml, contract['msisdn'])
             if ml_order and ml_order['status'] != 'DELV':
                 resolution = 'Zamówienie przetwarzane w ML. Proszę swoje zgłoszenie przekierować na panel zarządzania łańcuchem dostaw: ' \
