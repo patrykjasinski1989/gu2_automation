@@ -371,8 +371,11 @@ def process_ml_wzmuks(tier2, ml_connection, env_name):
                             format(env_name, user['login_ad'], user['profil'], user['data_waznosci_konta'])
 
             elif user['typ_wniosku'] == 'Nowe konto':
-                rows_inserted = create_account(
-                    ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                try:
+                    rows_inserted = create_account(
+                        ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
+                except cx_Oracle.IntegrityError:
+                    rows_inserted = 0
                 if rows_inserted == 1:
                     resolution += 'Utworzono dostęp do {} dla konta AD {} z profilem {} do dnia {}.\n'. \
                         format(env_name, user['login_ad'], user['profil'], user['data_waznosci_konta'])
