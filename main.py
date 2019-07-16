@@ -257,11 +257,18 @@ def close_pending_rsw():
 
 
 def offer_entitlement():
-    incidents = get_incidents(
+    incidents = []
+    incidents += get_incidents(
         'VC3_BSS_RSW',
         '(357) RSW / nBUK',
         '(357B) PROBLEMY Z OFERTĄ I TERMINALAMI',
         'Orange Mobile, B2C, B2B, Love'
+    )
+    incidents += get_incidents(
+        'VC3_BSS_RSW',
+        '000_incydent/awaria/uszkodzenie',
+        'OPTIPOS - OFERTA PTK',
+        'OFERTA UTRZYMANIOWA'
     )
 
     msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
@@ -281,7 +288,8 @@ def offer_entitlement():
                 'Proszę podać numer MSISDN oraz numer koszyka z którym jest problem:' in lines[i]) \
                     and i < len(lines) - 1:
                 msisdns = msisdn_regex.findall(lines[i + 1])
-            if 'proszę o uprawnienie' in lines[i].lower() or 'proszę o dodanie' in lines[i].lower():
+            if 'o uprawnienie' in lines[i].lower() or 'o dodanie' in lines[i].lower() or \
+                    'o podgranie' in lines[i].lower() or 'o migracj' in lines[i].lower():
                 entitlement = True
             if 'prepaid' in lines[i].lower():
                 prepaid = True
