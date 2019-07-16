@@ -289,7 +289,8 @@ def offer_entitlement():
                     and i < len(lines) - 1:
                 msisdns = msisdn_regex.findall(lines[i + 1])
             if 'o uprawnienie' in lines[i].lower() or 'o dodanie' in lines[i].lower() or \
-                    'o podgranie' in lines[i].lower() or 'o migracj' in lines[i].lower():
+                    'o podgranie' in lines[i].lower() or 'o migracj' in lines[i].lower() or \
+                    'o podegranie' in lines[i].lower():
                 entitlement = True
             if 'prepaid' in lines[i].lower():
                 prepaid = True
