@@ -150,7 +150,7 @@ def process_2b(otsa, contract, inc):
             return '', ''
 
         if contract['trans_type'][0] == 'T':
-            ml = ml_prod_connection
+            ml = ml_prod_connection()
             ml_order = get_order_data(ml, contract['msisdn'])
             if ml_order and ml_order['status'] != 'DELV':
                 resolution = 'Zamówienie przetwarzane w ML. Proszę swoje zgłoszenie przekierować na panel zarządzania łańcuchem dostaw: ' \
