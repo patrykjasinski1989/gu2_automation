@@ -282,7 +282,7 @@ def offer_entitlement():
         lines = inc['notes']
         for i in range(len(lines)):
             if 'Nazwa oferty' in lines[i]:
-                offer_name = lines[i + 1].strip()
+                offer_name = lines[i + 1].lower().strip()
                 offer_id = get_offer_id_by_name(rsw, offer_name)
             if ('Numer telefonu klienta Orange / MSISDN' in lines[i] or
                 'Proszę podać numer MSISDN oraz numer koszyka z którym jest problem:' in lines[i]) \
