@@ -162,7 +162,8 @@ def problems_with_offer():
 
 
 def unlock_accounts():
-    incidents = get_incidents(
+    incidents = []
+    incidents += get_incidents(
         'VC3_BSS_OPTIPOS_MOBILE',
         '000_incydent/awaria/uszkodzenie',
         'OTSA/OPTIPOS',
@@ -332,8 +333,10 @@ def process_ml_wzmuks(tier2, ml_connection, env_name):
         tier2,
         '40h'
     )
-
-    ml = ml_connection()
+    try:
+        ml = ml_connection()
+    except cx_Oracle.DatabaseError:
+        return
 
     for inc in incidents:
         wi = get_work_info(inc)
@@ -431,7 +434,7 @@ if __name__ == '__main__':
     lock_file = 'lock'
     if os.path.exists(lock_file):
         print('Lock file exists. Remove it to run the program.')
-        exit(666)
+        exit(37)
     try:
         unlock_accounts()
         process_transactions()
@@ -445,8 +448,8 @@ if __name__ == '__main__':
     except cx_Oracle.DatabaseError as e:
         print('Database error: {}.\nCreating lock file and exiting...'.format(e))
         open(lock_file, 'w+')
-        exit(666)
+        exit(37)
     except paramiko.ssh_exception.AuthenticationException as e:
         print('SSH error: {}.\nCreating lock file and exiting...'.format(e))
         open(lock_file, 'w+')
-        exit(666)
+        exit(37)

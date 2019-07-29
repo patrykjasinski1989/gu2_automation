@@ -5,8 +5,8 @@ import config
 
 
 def ml_sti_connection():
-    return cx_Oracle.connect(user=config.ml_sti['user'], password=config.ml_sti['password'],
-                             dsn=config.ml_sti['server'])
+    dsn_tns = cx_Oracle.makedsn(config.ml_sti['ip'], config.ml_sti['port'], config.ml_sti['sid'])
+    return cx_Oracle.connect(user=config.ml_sti['user'], password=config.ml_sti['password'], dsn=dsn_tns)
 
 
 def delete_account(con, login, inc):
