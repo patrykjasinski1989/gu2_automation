@@ -365,10 +365,7 @@ def process_8b(otsa, contract, inc):
 def process_1d(otsa, contract, inc):
     resolution = ''
 
-    if not to_cancel(inc):
-        update_transaction(otsa, contract['trans_code'], '1B')
-        update_processing_status(inc)
-    else:
+    if to_cancel(inc):
         update_transaction(otsa, contract['trans_code'], '3D')
         update_contract(otsa, contract['trans_code'], '3D')
         resolution = 'Umowa ' + contract['trans_num'] + ' anulowana.'
