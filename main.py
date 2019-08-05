@@ -289,9 +289,9 @@ def offer_entitlement():
                 'Proszę podać numer MSISDN oraz numer koszyka z którym jest problem:' in lines[i]) \
                     and i < len(lines) - 1:
                 msisdns = msisdn_regex.findall(lines[i + 1])
-            if 'o uprawnienie' in lines[i].lower() or 'o dodanie' in lines[i].lower() or \
-                    'o podgranie' in lines[i].lower() or 'o migracj' in lines[i].lower() or \
-                    'o podegranie' in lines[i].lower():
+            if 'o uprawnienie' in lines[i].lower() or 'dodanie' in lines[i].lower() or \
+                    'podgranie' in lines[i].lower() or 'migracj' in lines[i].lower() or \
+                    'podegranie' in lines[i].lower() or 'wgranie' in lines[i].lower():
                 entitlement = True
             if 'prepaid' in lines[i].lower():
                 prepaid = True

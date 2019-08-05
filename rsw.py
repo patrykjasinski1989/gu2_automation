@@ -78,5 +78,5 @@ def get_offer_id_by_name(con, offer_name):
 
 if __name__ == '__main__':
     rsw = rsw_connection()
-    offer_id = get_offer_id_by_name(rsw, '!Love 2ULTE Plan Komórkowy Prop')
+    offer_id = get_offer_id_by_name(rsw, 'prepaid')
     print(offer_id)
