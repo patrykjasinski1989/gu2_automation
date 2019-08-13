@@ -23,21 +23,21 @@ def process_transactions():
 
     incidents = get_incidents(
         'VC3_BSS_OPTIPOS_MOBILE',
-        '000_incydent/awaria/uszkodzenie',
-        'OPTIPOS - OFERTA PTK',
-        'AKTYWACJA KLIENTA'
+        '(129) OPTIPOS Mobile',
+        '(129B) AKTYWACJA KLIENTA',
+        'login OTSA'
     )
     incidents += get_incidents(
         'VC3_BSS_OPTIPOS_MOBILE',
-        '000_incydent/awaria/uszkodzenie',
-        'OPTIPOS - OFERTA PTK',
-        'MIGRACJA KLIENTA'
+        '(129) OPTIPOS Mobile',
+        '(129D) MIGRACJA KLIENTA',
+        'otsa sprzedaż'
     )
     incidents += get_incidents(
         'VC3_BSS_OPTIPOS_MOBILE',
-        '000_incydent/awaria/uszkodzenie',
-        'OPTIPOS - OFERTA PTK',
-        'SPRZEDAZ USLUG'
+        '(129) OPTIPOS Mobile',
+        '(129E) SPRZEDAZ USLUG',
+        'otsa sprzedaż'
     )
 
     msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
@@ -64,9 +64,9 @@ def process_transactions():
 def release_resources():
     incidents = get_incidents(
         'VC3_BSS_OPTIPOS_MOBILE',
-        '000_incydent/awaria/uszkodzenie',
-        'OTSA',
-        'UWOLNIENIE ZASOBOW'
+        '(129) OPTIPOS Mobile',
+        '(129M) UWOLNIENIE ZASOBOW',
+        'otsa sprzedaż'
     )
 
     otsa = otsa_connection()
@@ -165,19 +165,26 @@ def unlock_accounts():
     incidents = []
     incidents += get_incidents(
         'VC3_BSS_OPTIPOS_MOBILE',
-        '000_incydent/awaria/uszkodzenie',
-        'OTSA/OPTIPOS',
-        'ODBLOKOWANIE KONTA'
+        '(129) OPTIPOS Mobile',
+        '(129O) OTSA/OPTIPOS - odblokowanie konta',
+        'ota login odblokowanie'
     )
 
-    sd_tiers = ['OKI i SOHO - AKTYWACJA KONTA', '[DETAL PTK] KKB,ADT - AKTYWACJA KONTA',
-                '[DETAL TP] DEALER SUPPORT - AKTYWACJA KONTA', 'ZŁD Aktywacja/Modyfikacja konta']
-    for tier3 in sd_tiers:
+    incidents += get_incidents(
+        'VC3_BSS_OPTIPOS_MOBILE',
+        '(129) OPTIPOS Mobile',
+        '(129RF) DEALER SUPPORT - AKTYWACJA KONTA',
+        'otsa login dealersupport DS.'
+    )
+
+    sd_tiers = ['(129RI) OKI i SOHO - AKTYWACJA KONTA', '(129RA) KKB,ADT - AKTYWACJA KONTA',
+                '(129RK) ZŁD Aktywacja/Modyfikacja konta']
+    for tier2 in sd_tiers:
         incidents += get_incidents(
             'VC3_BSS_OPTIPOS_MOBILE',
-            '000_wniosek o dostęp/instalację/dostarczenie',
-            'OTSA/OPTIPOS',
-            tier3
+            '(129) OPTIPOS Mobile',
+            tier2,
+            'otsa login'
         )
 
     otsa = otsa_connection()
@@ -265,7 +272,7 @@ def offer_entitlement():
         '(357B) PROBLEMY Z OFERTĄ I TERMINALAMI',
         'Orange Mobile, B2C, B2B, Love'
     )
-    incidents += get_incidents(
+    incidents += get_incidents(  # TODO change category tiers here
         'VC3_BSS_RSW',
         '000_incydent/awaria/uszkodzenie',
         'OPTIPOS - OFERTA PTK',
@@ -289,8 +296,8 @@ def offer_entitlement():
                 'Proszę podać numer MSISDN oraz numer koszyka z którym jest problem:' in lines[i]) \
                     and i < len(lines) - 1:
                 msisdns = msisdn_regex.findall(lines[i + 1])
-            if 'o uprawnienie' in lines[i].lower() or 'dodanie' in lines[i].lower() or \
-                    'podgranie' in lines[i].lower() or 'migracj' in lines[i].lower() or \
+            if 'uprawnienie' in lines[i].lower() or 'dodanie' in lines[i].lower() or \
+                    'podgranie' in lines[i].lower() or 'o migracj' in lines[i].lower() or \
                     'podegranie' in lines[i].lower() or 'wgranie' in lines[i].lower():
                 entitlement = True
             if 'prepaid' in lines[i].lower():
