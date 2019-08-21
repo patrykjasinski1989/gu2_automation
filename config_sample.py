@@ -33,7 +33,11 @@ eai = {'server': 'http://10.236.14.11:4125'}
 
 ml = rsw
 
-ml_sti = {}
+ml_sti = {'user': '',
+          'password': '',
+          'ip': '10.12.116.25',
+          'port': 1521,
+          'sid': 'NIRSW2'}
 
 optpos_logs = {'server': '172.30.56.129',
                'user': '',
