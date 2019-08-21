@@ -272,11 +272,11 @@ def offer_entitlement():
         '(357B) PROBLEMY Z OFERTĄ I TERMINALAMI',
         'Orange Mobile, B2C, B2B, Love'
     )
-    incidents += get_incidents(  # TODO change category tiers here
+    incidents += get_incidents(
         'VC3_BSS_RSW',
-        '000_incydent/awaria/uszkodzenie',
-        'OPTIPOS - OFERTA PTK',
-        'OFERTA UTRZYMANIOWA'
+        '(129) OPTIPOS Mobile',
+        '(129C) OFERTA UTRZYMANIOWA',
+        'otsa utrzymanie'
     )
 
     msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
