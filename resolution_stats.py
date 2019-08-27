@@ -80,7 +80,7 @@ def print_stats(stats, details=False):
             for key2 in key2_order:
                 if key2 != total:
                     print('\t{} {}'.format(key2, stats[key1][key2]))
-            print()
+            print('')
 
 
 def main():
@@ -104,3 +104,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

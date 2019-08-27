@@ -328,6 +328,8 @@ def map_profile_to_db(profile_name):
         db_profile = 'DS_Orange_Love'
     elif 'read_only' in profile_name_lower and 'pickup' not in profile_name_lower:
         db_profile = 'Read_only'
+    elif 'biznes' in profile_name_lower:
+        db_profile = 'Biznes'
     elif 'ML_' in profile_name:
         db_profile = profile_name[3:]
     return db_profile
