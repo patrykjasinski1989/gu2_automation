@@ -1,3 +1,4 @@
+#!/usr/env/bin python3
 """This is the script used to close the tickets. GU2 Sales Incidents for OPL to be exact.
 Should be broken into smaller parts..."""
 __author__ = "Patryk Jasiński <pjasinski@bluesoft.com>"
@@ -8,16 +9,14 @@ import re
 import cx_Oracle
 import paramiko
 from datetime import datetime
-from dateutil import parser
 
 from db.otsa import otsa_connection, unlock_account
-from db.rsw import rsw_connection, get_latest_order, add_entitlement, get_offer_id_by_name
-from eai_ptk import get_expiration_date, get_contract_data
+from db.rsw import rsw_connection, get_latest_order, make_offer_available, get_offer_id_by_name
+from helper_functions import process_sims, find_login, extract_data_from_rsw_inc
 from ml_wzmuk_processing import ml_wzmuk_sti, ml_wzmuk_prod
 from otsa_processing import process_msisdns
-from remedy import get_incidents, close_incident, is_empty, get_work_info, \
+from remedy import get_incidents, close_incident, is_empty, \
     get_pending_incidents, assign_incident, get_all_incidents
-from sim_processing import process_sims
 
 
 def process_transactions():
@@ -65,7 +64,7 @@ def process_transactions():
 
 def release_resources():
     """Use to change SIM status to 'r' so the card can be used again in sales.
-    Logic implemented in sim_processing.py"""
+    Logic implemented in helper_functions.py"""
     incidents = get_incidents(
         'VC3_BSS_OPTIPOS_MOBILE',
         '(129) OPTIPOS Mobile',
@@ -90,45 +89,6 @@ def release_resources():
             close_incident(inc, resolution)
             print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution))
     otsa.close()
-
-
-def problems_with_offer():
-    """Handle incidents from the 'problems with offer' category.
-    It is most likely deprecated and removal of the whole function should be considered."""
-    incidents = get_incidents(
-        'VC3_BSS_RSW',
-        '(357) RSW / nBUK',
-        '(357B) PROBLEMY Z OFERTĄ I TERMINALAMI',
-        'Orange Mobile, B2C, B2B, Love'
-    )
-
-    for inc in incidents:
-        msisdn = ''
-        msisdn_in_next_line = False
-        offer_name = ''
-        for line in inc['notes']:
-            if 'Numer telefonu klienta Orange / MSISDN' in line:
-                msisdn_in_next_line = True
-                continue
-            if msisdn_in_next_line:
-                msisdn = line.strip()
-                msisdn_in_next_line = False
-            if 'Proszę o dodanie oferty: ' in line:
-                offer_name = line.split(': ')[1].split('.')[0]
-
-        expiration_date = get_expiration_date(get_contract_data(msisdn))
-        if expiration_date != '':
-            expiration_date = parser.parse(expiration_date)
-        else:
-            continue
-        now = datetime.now()
-        if (offer_name.lower() == 'plan komórkowy' or offer_name.lower() == 'internet mobilny') \
-                and (expiration_date - now).days > 120:
-            resolution = 'Klient ma lojalkę do {0}. Zgodnie z konfiguracją marketingową oferta {1} ' \
-                         'jest dostępna na 120 dni przed końcem lojalki, czyli klient tych wymagań nie spełnia. ' \
-                         'Brak błędu aplikacji.'.format(expiration_date, offer_name)
-            close_incident(inc, resolution)
-            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
 
 
 def unlock_accounts():
@@ -171,34 +131,6 @@ def unlock_accounts():
     otsa.close()
 
 
-def find_login(inc):
-    """Return account name to unlock, if it can be found."""
-    login = None
-    # looking for login in incident description
-    login_in_next_line = False
-    for line in inc['notes']:
-        if 'Podaj login OTSA' in line:
-            login_in_next_line = True
-            continue
-        if login_in_next_line:
-            login = line.strip().lower()
-            break
-    # login not found, looking in work info
-    if not login:
-        work_info = get_work_info(inc)
-        for entry in work_info:
-            notes = ' '.join(entry['notes']).lower().replace(':', ' ').split()
-            if 'sd' in entry['summary'].lower() and 'zdjęcie' in notes:
-                for word in 'lub odbicie na sd'.split():
-                    if word in notes:
-                        notes.remove(word)
-                login_keywords = ['konta', 'login', 'loginu']
-                for keyword in login_keywords:
-                    if keyword in notes:
-                        login = notes[notes.index(keyword) + 1]
-    return login
-
-
 def close_pending_rsw():
     """Use to close old pending tickets where there was some issue with placing an order.
     If there is a renewal order for the contract and the order date is later than the ticket creation date,
@@ -236,7 +168,7 @@ def close_pending_rsw():
     rsw.close()
 
 
-def offer_entitlement():
+def offer_availability():
     """Add an offer to the list of available ones in case of a contract renewal."""
     incidents = []
     incidents += get_incidents(
@@ -254,49 +186,21 @@ def offer_entitlement():
 
     rsw = rsw_connection()
     for inc in incidents:
-        entitlement, msisdns, offer_name = extract_data_from_rsw_inc(inc)
+        availability_inc, msisdns, offer_name = extract_data_from_rsw_inc(inc)
         if msisdns and len(msisdns) != 1:
             continue
         elif msisdns:
             msisdn = msisdns[0]
-        if msisdns and entitlement:
+        if msisdns and availability_inc:
             offer_id = get_offer_id_by_name(rsw, offer_name)
             if offer_id:
-                add_entitlement(rsw, msisdn, offer_id)
+                make_offer_available(rsw, msisdn, offer_id)
             else:
-                add_entitlement(rsw, msisdn)
+                make_offer_available(rsw, msisdn)
             resolution = 'Numer {} uprawniony.'.format(msisdn)
             close_incident(inc, resolution)
             print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
     rsw.close()
-
-
-def extract_data_from_rsw_inc(inc):
-    """Try to return if the ticket is about entitlement, desired offer name, and the MSISDN number.
-    This function is just a big fucking mess."""
-    entitlement = False
-    msisdns = None
-    msisdn_regex = re.compile(r'\d{3}[ -]?\d{3}[ -]?\d{3}')
-    lines = inc['notes']
-    for i, line in enumerate(lines):
-        if 'Nazwa oferty' in line:
-            offer_name = lines[i + 1].lower().strip()
-        if ('Numer telefonu klienta Orange / MSISDN' in line or
-            'Proszę podać numer MSISDN oraz numer koszyka, z którym jest problem:' in line) \
-                and i < len(lines) - 1:
-            msisdns = msisdn_regex.findall(lines[i + 1])
-        entitlement_keywords = ['uprawnienie', 'dodanie', 'podgranie', 'o migracj', 'podegranie', 'wgranie']
-        for entitlement_keyword in entitlement_keywords:
-            if entitlement_keyword in line.lower():
-                entitlement = True
-                break
-        prepaid_keywords = ['prepaid', 'pripeid']
-        for prepaid_keyword in prepaid_keywords:
-            if prepaid_keyword in line.lower():
-                offer_name = 'migracja na prepaid'
-    if msisdns:
-        msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
-    return entitlement, msisdns, offer_name
 
 
 def empty_rsw_inc():
@@ -319,9 +223,8 @@ if __name__ == '__main__':
         unlock_accounts()
         process_transactions()
         release_resources()
-        problems_with_offer()
         close_pending_rsw()
-        offer_entitlement()
+        offer_availability()
         empty_rsw_inc()
         ml_wzmuk_sti()
         ml_wzmuk_prod()

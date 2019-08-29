@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """This script generates statistics about incidents resolved by everyone in the last two weeks."""
 from remedy import get_resolved_incidents
 

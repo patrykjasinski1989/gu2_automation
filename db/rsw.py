@@ -42,7 +42,7 @@ def get_latest_order(con, msisdn):
     return dict_row
 
 
-def add_entitlement(con, msisdn, offer_id_=6021):
+def make_offer_available(con, msisdn, offer_id_=6021):
     """Execute a procedure to make an offer available for a given MSISDN number."""
     cur = con.cursor()
     cur.execute("""

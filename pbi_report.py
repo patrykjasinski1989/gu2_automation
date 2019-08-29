@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """This scripts returns a list of PBIs sorted by amount of related incidents."""
 import operator
 
