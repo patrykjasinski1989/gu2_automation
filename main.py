@@ -1,4 +1,7 @@
-# -*- coding: utf-8 -*-
+"""This is the script used to close the tickets. GU2 Sales Incidents for OPL to be exact.
+Should be broken into smaller parts..."""
+__author__ = "Patryk Jasiński <pjasinski@bluesoft.com>"
+
 import os
 import re
 
@@ -6,21 +9,20 @@ import cx_Oracle
 import paramiko
 from datetime import datetime
 from dateutil import parser
-from xlrd import open_workbook, cellname, xldate_as_tuple
 
-from eai import get_expiration_date, get_contract_data
-from ml import ml_prod_connection
-from ml_sti import ml_sti_connection, recertify_account, create_account, delete_account
-from nra import get_sim_status, nra_connection, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
-from otsa import otsa_connection, check_sim, unlock_account
+from db.otsa import otsa_connection, unlock_account
+from db.rsw import rsw_connection, get_latest_order, add_entitlement, get_offer_id_by_name
+from eai_ptk import get_expiration_date, get_contract_data
+from ml_wzmuk_processing import ml_wzmuk_sti, ml_wzmuk_prod
 from otsa_processing import process_msisdns
-from remedy import get_incidents, close_incident, is_empty, get_work_info, add_work_info, reassign_incident, \
+from remedy import get_incidents, close_incident, is_empty, get_work_info, \
     get_pending_incidents, assign_incident, get_all_incidents
-from rsw import rsw_connection, get_latest_order, add_entitlement, get_offer_id_by_name
+from sim_processing import process_sims
 
 
 def process_transactions():
-
+    """Process transactions on prod otsa database.
+    Do so using rules that no one understands anymore (defined in otsa_processing.py)."""
     incidents = get_incidents(
         'VC3_BSS_OPTIPOS_MOBILE',
         '(129) OPTIPOS Mobile',
@@ -40,14 +42,14 @@ def process_transactions():
         'otsa sprzedaż'
     )
 
-    msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
+    msisdn_regex = re.compile(r'\d{3}[ -]?\d{3}[ -]?\d{3}')
     trans_num_regex = re.compile('[A-Z0-9]{5,}?/?[0-9]{4}/[0-9]+')
     for inc in incidents:
         resolution = ''
         lines = inc['notes']
         all_resolved = True
-        for i in range(len(lines)):
-            if 'Proszę podać numer MSISDN' in lines[i] or 'Numer telefonu klienta Orange / MSISDN' in lines[i]:
+        for i, line in enumerate(lines):
+            if 'Proszę podać numer MSISDN' in line or 'Numer telefonu klienta Orange / MSISDN' in line:
                 msisdns = msisdn_regex.findall(lines[i + 1])
                 msisdns += msisdn_regex.findall(lines[i + 2])
                 msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
@@ -62,6 +64,8 @@ def process_transactions():
 
 
 def release_resources():
+    """Use to change SIM status to 'r' so the card can be used again in sales.
+    Logic implemented in sim_processing.py"""
     incidents = get_incidents(
         'VC3_BSS_OPTIPOS_MOBILE',
         '(129) OPTIPOS Mobile',
@@ -70,49 +74,13 @@ def release_resources():
     )
 
     otsa = otsa_connection()
-    sim_regex = re.compile('[0-9]{19,20}')
+    sim_regex = re.compile(r'[0-9]{19,20}')
     for inc in incidents:
         sims = []
         for line in inc['notes']:
             sims.extend(sim_regex.findall(line))
 
-        all_resolved = True
-        resolution = ''
-
-        nra = nra_connection()
-        for sim in sims:
-            partial_resolution = ''
-            result = check_sim(otsa, sim)
-            result = [r for r in result if r['status'] not in ('3D', '3G')]
-            if len(result) == 0:
-                wi_notes = ''
-                sim_status = get_sim_status(nra, sim)
-                if len(sim_status) == 0:
-                    partial_resolution = 'Brak karty SIM {0} w nRA. Proszę podać poprawny numer.'.format(sim)
-                    resolution = partial_resolution + '\r\n'
-                    continue
-                if sim_status['status_nra'] == sim_status['status_bscs']:
-                    if sim_status['status_nra'] in ('r', 'd', 'l', 'E') \
-                            and sim_status['status_nra'] == sim_status['status_bscs']:
-                        set_sim_status_nra(nra, sim, 'r')
-                        set_sim_status_bscs(nra, sim, 'r')
-                        set_imsi_status_bscs(nra, sim_status['imsi'], 'r')
-                        partial_resolution = 'Karta SIM {0} uwolniona.'.format(sim)
-                    elif sim_status['status_nra'] in ('a', 'B'):
-                        partial_resolution = 'Karta SIM {0} aktywna. Brak możliwości odblokowania.'.format(sim)
-                    else:
-                        all_resolved = False
-                        wi_notes += 'Karta SIM {} w statusie {}.\nW Optiposie brak powiązań.'.format(sim, sim_status)
-                if wi_notes:
-                    add_work_info(inc, 'VC_OPTIPOS', wi_notes)
-                    reassign_incident(inc, 'NRA')
-            else:
-                partial_resolution = 'Karta SIM {0} powiązana z nieanulowaną umową {1}. Brak możliwości odblokowania. ' \
-                                     'Proszę o kontakt z dealer support lub z działem reklamacji.' \
-                    .format(sim, result[0]['trans_num'])
-            if partial_resolution != '':
-                resolution = resolution + '\r\n' + partial_resolution
-        nra.close()
+        all_resolved, resolution = process_sims(sims, otsa, inc)
 
         if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
@@ -125,6 +93,8 @@ def release_resources():
 
 
 def problems_with_offer():
+    """Handle incidents from the 'problems with offer' category.
+    It is most likely deprecated and removal of the whole function should be considered."""
     incidents = get_incidents(
         'VC3_BSS_RSW',
         '(357) RSW / nBUK',
@@ -148,12 +118,12 @@ def problems_with_offer():
 
         expiration_date = get_expiration_date(get_contract_data(msisdn))
         if expiration_date != '':
-            dt = parser.parse(expiration_date)
+            expiration_date = parser.parse(expiration_date)
         else:
             continue
         now = datetime.now()
         if (offer_name.lower() == 'plan komórkowy' or offer_name.lower() == 'internet mobilny') \
-                and (dt - now).days > 120:
+                and (expiration_date - now).days > 120:
             resolution = 'Klient ma lojalkę do {0}. Zgodnie z konfiguracją marketingową oferta {1} ' \
                          'jest dostępna na 120 dni przed końcem lojalki, czyli klient tych wymagań nie spełnia. ' \
                          'Brak błędu aplikacji.'.format(expiration_date, offer_name)
@@ -162,6 +132,7 @@ def problems_with_offer():
 
 
 def unlock_accounts():
+    """Reset the password and unlock the account, if the login can be found in the ticket."""
     incidents = []
     incidents += get_incidents(
         'VC3_BSS_OPTIPOS_MOBILE',
@@ -169,7 +140,6 @@ def unlock_accounts():
         '(129O) OTSA/OPTIPOS - odblokowanie konta',
         'ota login odblokowanie'
     )
-
     incidents += get_incidents(
         'VC3_BSS_OPTIPOS_MOBILE',
         '(129) OPTIPOS Mobile',
@@ -190,36 +160,7 @@ def unlock_accounts():
     otsa = otsa_connection()
 
     for inc in incidents:
-        login = None
-        # looking for login in incident description
-        login_in_next_line = False
-        for line in inc['notes']:
-            if 'Podaj login OTSA' in line:
-                login_in_next_line = True
-                continue
-            if login_in_next_line:
-                login = line.strip().lower()
-                break
-        # login not found, looking in work info
-        if not login:
-            wi = get_work_info(inc)
-            for entry in wi:
-                notes = ' '.join(entry['notes']).lower().replace(':', ' ').split()
-                if 'sd' in entry['summary'].lower() and 'zdjęcie' in notes:
-                    for word in 'lub odbicie na sd'.split():
-                        if word in notes:
-                            notes.remove(word)
-                    if 'konta' in notes and 'login' not in notes:
-                        login = notes[notes.index('konta') + 1]
-                    elif 'loginu' in notes:
-                        login = notes[notes.index('loginu') + 1]
-                    elif 'login' in notes:
-                        login = notes[notes.index('login') + 1]
-                    elif 'logowania' in notes:
-                        login = notes[notes.index('logowania') + 1]
-                    else:
-                        login = notes[-1]
-        # unlock account if login found
+        login = find_login(inc)
         if login:
             rows_updated = unlock_account(otsa, login)
             if rows_updated == 1:
@@ -230,17 +171,48 @@ def unlock_accounts():
     otsa.close()
 
 
+def find_login(inc):
+    """Return account name to unlock, if it can be found."""
+    login = None
+    # looking for login in incident description
+    login_in_next_line = False
+    for line in inc['notes']:
+        if 'Podaj login OTSA' in line:
+            login_in_next_line = True
+            continue
+        if login_in_next_line:
+            login = line.strip().lower()
+            break
+    # login not found, looking in work info
+    if not login:
+        work_info = get_work_info(inc)
+        for entry in work_info:
+            notes = ' '.join(entry['notes']).lower().replace(':', ' ').split()
+            if 'sd' in entry['summary'].lower() and 'zdjęcie' in notes:
+                for word in 'lub odbicie na sd'.split():
+                    if word in notes:
+                        notes.remove(word)
+                login_keywords = ['konta', 'login', 'loginu']
+                for keyword in login_keywords:
+                    if keyword in notes:
+                        login = notes[notes.index(keyword) + 1]
+    return login
+
+
 def close_pending_rsw():
+    """Use to close old pending tickets where there was some issue with placing an order.
+    If there is a renewal order for the contract and the order date is later than the ticket creation date,
+    we close the ticket as resolved."""
     incidents = get_pending_incidents(['VC3_BSS_RSW'])
-    msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
+    msisdn_regex = re.compile(r'\d{3}[ -]?\d{3}[ -]?\d{3}')
     rsw = rsw_connection()
     for inc in incidents:
         resolution = ''
         lines = inc['notes']
         msisdns = None
         last_order = None
-        for i in range(len(lines)):
-            if 'Numer telefonu klienta Orange / MSISDN' in lines[i] and i < len(lines) - 1:
+        for i, line in enumerate(lines):
+            if 'Numer telefonu klienta Orange / MSISDN' in line and i < len(lines) - 1:
                 msisdns = msisdn_regex.findall(lines[i + 1])
         if msisdns:
             msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
@@ -265,6 +237,7 @@ def close_pending_rsw():
 
 
 def offer_entitlement():
+    """Add an offer to the list of available ones in case of a contract renewal."""
     incidents = []
     incidents += get_incidents(
         'VC3_BSS_RSW',
@@ -279,40 +252,17 @@ def offer_entitlement():
         'otsa utrzymanie'
     )
 
-    msisdn_regex = re.compile('\d{3}[ -]?\d{3}[ -]?\d{3}')
     rsw = rsw_connection()
     for inc in incidents:
-        resolution = ''
-        entitlement = False
-        prepaid = False
-        msisdns = None
-        offer_name = None
-        lines = inc['notes']
-        for i in range(len(lines)):
-            if 'Nazwa oferty' in lines[i]:
-                offer_name = lines[i + 1].lower().strip()
-                offer_id = get_offer_id_by_name(rsw, offer_name)
-            if ('Numer telefonu klienta Orange / MSISDN' in lines[i] or
-                'Proszę podać numer MSISDN oraz numer koszyka z którym jest problem:' in lines[i]) \
-                    and i < len(lines) - 1:
-                msisdns = msisdn_regex.findall(lines[i + 1])
-            if 'uprawnienie' in lines[i].lower() or 'dodanie' in lines[i].lower() or \
-                    'podgranie' in lines[i].lower() or 'o migracj' in lines[i].lower() or \
-                    'podegranie' in lines[i].lower() or 'wgranie' in lines[i].lower():
-                entitlement = True
-            if 'prepaid' in lines[i].lower():
-                prepaid = True
-        if msisdns:
-            msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
+        entitlement, msisdns, offer_name = extract_data_from_rsw_inc(inc)
         if msisdns and len(msisdns) != 1:
             continue
         elif msisdns:
             msisdn = msisdns[0]
         if msisdns and entitlement:
+            offer_id = get_offer_id_by_name(rsw, offer_name)
             if offer_id:
                 add_entitlement(rsw, msisdn, offer_id)
-            elif prepaid:
-                add_entitlement(rsw, msisdn, 3624)
             else:
                 add_entitlement(rsw, msisdn)
             resolution = 'Numer {} uprawniony.'.format(msisdn)
@@ -321,115 +271,36 @@ def offer_entitlement():
     rsw.close()
 
 
-def map_profile_to_db(profile_name):
-    profile_name_lower = profile_name.lower()
-    db_profile = None
-    if 'dealer' in profile_name_lower and 'support' in profile_name_lower:
-        db_profile = 'DS_Orange_Love'
-    elif 'read_only' in profile_name_lower and 'pickup' not in profile_name_lower:
-        db_profile = 'Read_only'
-    elif 'biznes' in profile_name_lower:
-        db_profile = 'Biznes'
-    elif 'ML_' in profile_name:
-        db_profile = profile_name[3:]
-    return db_profile
-
-
-def process_ml_wzmuks(tier2, ml_connection, env_name):
-    incidents = get_incidents(
-        'VC3_BSS_ML',
-        '(185) E-WZMUK-konto w SI Nowe/Modyfikacja/Likwidacja',
-        tier2,
-        '40h'
-    )
-    try:
-        ml = ml_connection()
-    except cx_Oracle.DatabaseError:
-        return
-
-    for inc in incidents:
-        wi = get_work_info(inc)
-        filename, contents = wi[0]['attachment']
-
-        xls_file = open(filename, 'wb')
-        xls_file.write(contents)
-        xls_file.close()
-        book = open_workbook(filename)
-        sheet = book.sheet_by_name('Lista osób')
-
-        users = []
-        for row in range(8, sheet.nrows):
-            user = {}
-            for col in range(sheet.ncols):
-                if 'K' in cellname(row, col):
-                    user['login_ad'] = sheet.cell(row, col).value
-                elif 'S' in cellname(row, col):
-                    user['typ_wniosku'] = sheet.cell(row, col).value
-                elif 'T' in cellname(row, col):
-                    profile = sheet.cell(row, col).value
-                    user['profil'] = map_profile_to_db(profile)
-                elif 'U' in cellname(row, col):
-                    date_value = xldate_as_tuple(sheet.cell(row, col).value, book.datemode)[:3]
-                    user['data_waznosci_konta'] = datetime(*date_value)
-                elif 'W' in cellname(row, col):
-                    user['przedluzenie_dostepu'] = sheet.cell(row, col).value
-            users.append(user)
-        os.remove(filename)
-
-        resolution = ''
-        for user in users:
-            if user['typ_wniosku'] == 'Modyfikacja uprawnień':
-                rows_updated = recertify_account(
-                    ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
-                if rows_updated == 1:
-                    resolution += 'Przedłużono dostęp do {} dla konta AD {} do dnia {}.\n'. \
-                        format(env_name, user['login_ad'], user['data_waznosci_konta'])
-                elif rows_updated == 0:
-                    rows_inserted = create_account(
-                        ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
-                    if rows_inserted == 1:
-                        resolution += 'Utworzono dostęp do {} dla konta AD {} z profilem {} do dnia {}.\n'. \
-                            format(env_name, user['login_ad'], user['profil'], user['data_waznosci_konta'])
-
-            elif user['typ_wniosku'] == 'Nowe konto':
-                try:
-                    rows_inserted = create_account(
-                        ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
-                except cx_Oracle.IntegrityError:
-                    rows_inserted = 0
-                if rows_inserted == 1:
-                    resolution += 'Utworzono dostęp do {} dla konta AD {} z profilem {} do dnia {}.\n'. \
-                        format(env_name, user['login_ad'], user['profil'], user['data_waznosci_konta'])
-                elif rows_inserted == 0:
-                    rows_updated = recertify_account(
-                        ml, user['login_ad'], user['data_waznosci_konta'], user['profil'], inc['inc'])
-                    if rows_updated == 1:
-                        resolution += 'Przedłużono dostęp do {} dla konta AD {} do dnia {}.\n'. \
-                            format(env_name, user['login_ad'], user['data_waznosci_konta'])
-
-            elif user['typ_wniosku'] == 'Likwidacja konta':
-                rows_updated = delete_account(ml, user['login_ad'], inc)
-                if rows_updated == 1:
-                    resolution += 'Usunięto dostęp do {} dla konta AD {}.\n'.format(env_name, user['login_ad'])
-                elif rows_updated == 0:
-                    resolution += 'Brak dostępu do {} dla konta AD {}.\n'.format(env_name, user['login_ad'])
-
-        if resolution:
-            close_incident(inc, resolution.strip())
-            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
-
-    ml.close()
-
-
-def ml_wzmuk_sti():
-    process_ml_wzmuks(tier2='M55 ML_STI', ml_connection=ml_sti_connection, env_name='ML ŚTI')
-
-
-def ml_wzmuk_prod():
-    process_ml_wzmuks(tier2='M38 ML', ml_connection=ml_prod_connection, env_name='ML PROD')
+def extract_data_from_rsw_inc(inc):
+    """Try to return if the ticket is about entitlement, desired offer name, and the MSISDN number.
+    This function is just a big fucking mess."""
+    entitlement = False
+    msisdns = None
+    msisdn_regex = re.compile(r'\d{3}[ -]?\d{3}[ -]?\d{3}')
+    lines = inc['notes']
+    for i, line in enumerate(lines):
+        if 'Nazwa oferty' in line:
+            offer_name = lines[i + 1].lower().strip()
+        if ('Numer telefonu klienta Orange / MSISDN' in line or
+            'Proszę podać numer MSISDN oraz numer koszyka, z którym jest problem:' in line) \
+                and i < len(lines) - 1:
+            msisdns = msisdn_regex.findall(lines[i + 1])
+        entitlement_keywords = ['uprawnienie', 'dodanie', 'podgranie', 'o migracj', 'podegranie', 'wgranie']
+        for entitlement_keyword in entitlement_keywords:
+            if entitlement_keyword in line.lower():
+                entitlement = True
+                break
+        prepaid_keywords = ['prepaid', 'pripeid']
+        for prepaid_keyword in prepaid_keywords:
+            if prepaid_keyword in line.lower():
+                offer_name = 'migracja na prepaid'
+    if msisdns:
+        msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
+    return entitlement, msisdns, offer_name
 
 
 def empty_rsw_inc():
+    """Close tickets with no content."""
     all_rsw_inc = get_all_incidents('VC3_BSS_RSW')
     for inc in all_rsw_inc:
         if is_empty(inc):
@@ -440,8 +311,8 @@ def empty_rsw_inc():
 
 if __name__ == '__main__':
 
-    lock_file = 'lock'
-    if os.path.exists(lock_file):
+    LOCK_FILE = 'lock'
+    if os.path.exists(LOCK_FILE):
         print('Lock file exists. Remove it to run the program.')
         exit(37)
     try:
@@ -454,11 +325,11 @@ if __name__ == '__main__':
         empty_rsw_inc()
         ml_wzmuk_sti()
         ml_wzmuk_prod()
-    except cx_Oracle.DatabaseError as e:
-        print('Database error: {}.\nCreating lock file and exiting...'.format(e))
-        open(lock_file, 'w+')
+    except cx_Oracle.DatabaseError as db_exception:
+        print('Database error: {}.\nCreating lock file and exiting...'.format(db_exception))
+        open(LOCK_FILE, 'w+')
         exit(37)
-    except paramiko.ssh_exception.AuthenticationException as e:
-        print('SSH error: {}.\nCreating lock file and exiting...'.format(e))
-        open(lock_file, 'w+')
+    except paramiko.ssh_exception.AuthenticationException as ssh_exception:
+        print('SSH error: {}.\nCreating lock file and exiting...'.format(ssh_exception))
+        open(LOCK_FILE, 'w+')
         exit(37)

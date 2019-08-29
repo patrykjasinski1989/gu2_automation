@@ -1,14 +1,17 @@
-# -*- coding: utf-8 -*-
+"""This module is used for getting data from RSW database."""
 import cx_Oracle
 
 import config
+from db.db_helpers import execute_dml
 
 
 def rsw_connection():
-    return cx_Oracle.connect('{}/{}@{}'.format(config.rsw['user'], config.rsw['password'], config.rsw['server']))
+    """Return a connection to RSW database."""
+    return cx_Oracle.connect('{}/{}@{}'.format(config.RSW['user'], config.RSW['password'], config.RSW['server']))
 
 
 def get_order_id(con, msisdn, status):
+    """Return last order for a given msisdn and status."""
     cur = con.cursor()
     cur.execute('select max(id_zamowienia) from rsw.rsw_zamowienia '
                 'where dn_num = \'' + str(msisdn) + '\' and status = ' + str(status))
@@ -18,21 +21,17 @@ def get_order_id(con, msisdn, status):
 
 
 def set_order_status(con, order_id, status):
-    cur = con.cursor()
-    cur.execute('update rsw.rsw_zamowienia set status = ' + str(status) + ' where id_zamowienia = ' + str(order_id))
-    if cur.rowcount == 1:
-        con.commit()
-    else:
-        con.rollback()
-    cur.close()
-    return cur.rowcount
+    """Set order status for a given order_id."""
+    stmt = 'update rsw.rsw_zamowienia set status = ' + str(status) + ' where id_zamowienia = ' + str(order_id)
+    return execute_dml(con, stmt)
 
 
 def get_latest_order(con, msisdn):
+    """Return last order for a given MSISDN number."""
     cur = con.cursor()
-    cur.execute('select * from (select id_zamowienia, data_zamowienia, status, status_om, ilosc_prob '
-                "from rsw.rsw_zamowienia where dn_num = '{}' order by data_zamowienia desc) where rownum = 1".format(
-        msisdn))
+    cur.execute("select * from (select id_zamowienia, data_zamowienia, status, status_om, ilosc_prob "
+                "from rsw.rsw_zamowienia where dn_num = '{}' order by data_zamowienia desc) where rownum = 1"
+                .format(msisdn))
     row = cur.fetchone()
     cur.close()
     if cur.rowcount == 1:
@@ -43,7 +42,8 @@ def get_latest_order(con, msisdn):
     return dict_row
 
 
-def add_entitlement(con, msisdn, offer_id=6021):
+def add_entitlement(con, msisdn, offer_id_=6021):
+    """Execute a procedure to make an offer available for a given MSISDN number."""
     cur = con.cursor()
     cur.execute("""
     declare
@@ -58,25 +58,25 @@ def add_entitlement(con, msisdn, offer_id=6021):
         values (v_co_id, trunc(sysdate), trunc(sysdate), trunc(sysdate+365), 'matprotas', v_id_oferty, 52, v_ins_prod_id, v_msisdn, 1);
         commit;
     end;
-    """.format(msisdn, offer_id))
+    """.format(msisdn, offer_id_))
     cur.close()
     return 0
 
 
 def get_offer_id_by_name(con, offer_name):
+    """Find offer id by name."""
     offer_name = ''.join([c if ord(c) < 128 else '_' for c in offer_name])
     cur = con.cursor()
     stmt = """select id_oferty from rsw.rsw_oferty where lower(nazwa_oferty) like lower('%{}%')""".format(offer_name)
     cur.execute(stmt)
-    _offer_id = cur.fetchone()
+    offer_id_ = cur.fetchone()
     cur.close()
-    if _offer_id:
-        return _offer_id[0]
-    else:
-        return None
+    if offer_id_:
+        return offer_id_[0]
+    return None
 
 
 if __name__ == '__main__':
-    rsw = rsw_connection()
-    offer_id = get_offer_id_by_name(rsw, 'prepaid')
-    print(offer_id)
+    RSW = rsw_connection()
+    OFFER_ID = get_offer_id_by_name(RSW, 'prepaid')
+    print(OFFER_ID)

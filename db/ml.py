@@ -1,14 +1,17 @@
-# -*- coding: utf-8 -*-
+"""This module is not really used (at least not yet).
+It will be used for getting data from ML database."""
 import cx_Oracle
 
 import config
 
 
 def ml_prod_connection():
-    return cx_Oracle.connect(user=config.ml['user'], password=config.ml['password'], dsn=config.ml['server'])
+    """Returns ML prod database connection."""
+    return cx_Oracle.connect(user=config.ML['user'], password=config.ML['password'], dsn=config.ML['server'])
 
 
 def get_order_data(con, msisdn):
+    """Returns last order for a given MSISDN number."""
     cur = con.cursor()
     stmt = "select k.msisdn, k.idzleceniaom, z.id, z.status, z.datazmianystatusu " \
            "from ml.kontrakty k join ml.zlecenia z on z.id = k.idzlecenia " \

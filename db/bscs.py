@@ -1,14 +1,18 @@
-# -*- coding: utf-8 -*-
+"""This module is used to interact with bscs database."""
+
 import cx_Oracle
 
 import config
+from db.db_helpers import execute_dml
 
 
 def bscs_connection():
-    return cx_Oracle.connect('{}/{}@{}'.format(config.bscs['user'], config.bscs['password'], config.bscs['server']))
+    """Returns connection to prod bscs database."""
+    return cx_Oracle.connect('{}/{}@{}'.format(config.BSCS['user'], config.BSCS['password'], config.BSCS['server']))
 
 
 def get_customer_id(con, custcode):
+    """Returns customer_id for a given custcode"""
     cur = con.cursor()
     cur.execute('select aa.CUSTOMER_ID from ccontact_all bb, customer_all aa '
                 'where aa.customer_id=bb.customer_id and aa.custcode = \'' + str(custcode) + '\'')
@@ -18,20 +22,14 @@ def get_customer_id(con, custcode):
 
 
 def set_trans_no(con, custcode, trans_no):
-    cur = con.cursor()
+    """Sets trans_no for a given custcode."""
     stmt = 'update ptk_otsa.ptk_otsa_resources set trans_no = ' + str(
         trans_no) + ' where subtrans_no=0 and type=\'CUSTCODE_S\' ' \
                     'and value = \'' + str(custcode) + '\''
-    cur.execute(stmt)
-    if cur.rowcount == 1:
-        con.commit()
-    else:
-        con.rollback()
-    cur.close()
-    return cur.rowcount
+    execute_dml(con, stmt)
 
 
-if __name__ == "__main__":
-    bscs = bscs_connection()
-    print(get_customer_id(bscs, '1.20894258'))
-    bscs.close()
+if __name__ == '__main__':
+    BSCS = bscs_connection()
+    print(get_customer_id(BSCS, '1.20894258'))
+    BSCS.close()

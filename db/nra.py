@@ -1,14 +1,18 @@
-# -*- coding: utf-8 -*-
+"""This module is used for communication with nRA prod database."""
+
 import cx_Oracle
 
 import config
+from db.db_helpers import execute_dml
 
 
 def nra_connection():
-    return cx_Oracle.connect('{}/{}@{}'.format(config.nra['user'], config.nra['password'], config.nra['server']))
+    """Returns nRA prod db connection."""
+    return cx_Oracle.connect('{}/{}@{}'.format(config.NRA['user'], config.NRA['password'], config.NRA['server']))
 
 
 def get_sim_status(con, sim):
+    """Returns SIM card data using a big and scary query. ;)"""
     cur = con.cursor()
     stmt = """
         select sim, plcode_bscs, plcode_nra, status_bscs, status_nra, imsi, p_plcode, p_status, hlrid_bscs,
@@ -39,51 +43,36 @@ def get_sim_status(con, sim):
 
 
 def set_sim_status_nra(con, sim, status):
-    cur = con.cursor()
+    """Changes SIM status in nRA."""
     stmt = """
         update karty_sim s
         set S.STATUS = '{1}'
         where sim in ('{0}')
     """.format(sim, status)
-    cur.execute(stmt)
-    if cur.rowcount == 1:
-        con.commit()
-    else:
-        con.rollback()
-    return cur.rowcount
+    return execute_dml(con, stmt)
 
 
 def set_sim_status_bscs(con, sim, status):
-    cur = con.cursor()
+    """Changes SIM status in BSCS."""
     stmt = """
         update storage_medium@bscs_nra sm
         set sm.sm_status = '{1}'
         WHERE sm.sm_serialnum IN ('{0}')
         """.format(sim, status)
-    cur.execute(stmt)
-    if cur.rowcount == 1:
-        con.commit()
-    else:
-        con.rollback()
-    return cur.rowcount
+    return execute_dml(con, stmt)
 
 
 def set_imsi_status_bscs(con, imsi, status):
-    cur = con.cursor()
+    """Changes IMSI status in BSCS."""
     stmt = """
         update port@bscs_nra p
         set p.port_status = '{1}'
         WHERE p.port_num IN ('{0}')
             """.format(imsi, status)
-    cur.execute(stmt)
-    if cur.rowcount == 1:
-        con.commit()
-    else:
-        con.rollback()
-    return cur.rowcount
+    return execute_dml(con, stmt)
 
 
 if __name__ == "__main__":
-    nra = nra_connection()
-    print(get_sim_status(nra, '8948030322510315157'))
-    nra.close()
+    NRA = nra_connection()
+    print(get_sim_status(NRA, '8948030322510315157'))
+    NRA.close()

@@ -1,44 +1,47 @@
-# -*- coding: utf-8 -*-
+"""This module stores all connection strings to production databases but without logins and passwords.
+Used to be uploaded to the repository instead of config.py"""
 
-remedy = {'server': '126.185.108.140',
+REMEDY = {'server': '126.185.108.140',
           'port': 60000,
           'user': '',
           'password': ''}
 
-om = {'server': 'http://172.30.70.10:6655',
-      'user': '',
-      'password': ''}
+OM_PTK = {'server': 'http://172.30.70.10:6655',
+          'user': '',
+          'password': ''}
 
-otsa = {'server': '10.236.28.107:1521/OTSA',
+OTSA = {'server': '10.236.28.107:1521/OTSA',
         'user': '',
         'password': ''}
 
-rsw = {'server': '10.236.28.53:1521/RSW',
+RSW = {'server': '10.236.28.53:1521/RSW',
        'user': '',
        'password': ''}
 
-nra = {'server': '10.236.28.66:1526/NRA',
+NRA = {'server': '10.236.28.66:1526/NRA',
        'user': '',
        'password': ''}
 
-bscs = {'server': '10.236.28.81:1526/BSCS',
+BSCS = {'server': '10.236.28.81:1526/BSCS',
         'user': '',
         'password': ''}
 
-opti = {'server': '10.236.28.114:1551/OPTIPOS',
-        'user': '',
-        'password': ''}
+OPTIPOS = {'server': '10.236.28.114:1551/OPTIPOS',
+           'user': '',
+           'password': ''}
 
-eai = {'server': 'http://10.236.14.11:4125'}
+EAI = {'server': 'http://10.236.14.11:4125'}
 
-ml = rsw
+ML = RSW
 
-ml_sti = {'user': '',
+ML_PROD = ML
+
+ML_STI = {'user': '',
           'password': '',
           'ip': '10.12.116.25',
           'port': 1521,
           'sid': 'NIRSW2'}
 
-optpos_logs = {'server': '172.30.56.129',
+OPTPOS_LOGS = {'server': '172.30.48.187',
                'user': '',
                'password': ''}
