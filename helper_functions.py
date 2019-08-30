@@ -85,7 +85,7 @@ def extract_data_from_rsw_inc(inc):
     """Try to return if the ticket is about offer_availability, desired offer name, and the MSISDN number.
     This function is just a big fucking mess."""
     offer_availability_ = False
-    msisdns = None
+    offer_name, msisdns = None, None
     msisdn_regex = re.compile(r'\d{3}[ -]?\d{3}[ -]?\d{3}')
     lines = inc['notes']
     for i, line in enumerate(lines):
