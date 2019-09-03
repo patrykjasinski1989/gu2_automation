@@ -134,6 +134,7 @@ def ml_add_access(ml_con, user, env_name, inc):
         if rows_updated == 1:
             resolution += 'Przedłużono dostęp do {} dla konta AD {} do dnia {}.\n'. \
                 format(env_name, user['login_ad'], user['data_waznosci_konta'])
+    return resolution
 
 
 def ml_remove_access(ml_con, user, env_name, inc):
