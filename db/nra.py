@@ -1,14 +1,11 @@
 """This module is used for communication with nRA prod database."""
-
-import cx_Oracle
-
 import config
-from db.db_helpers import execute_dml
+from db.db_helpers import execute_dml, connect
 
 
 def nra_connection():
     """Returns nRA prod db connection."""
-    return cx_Oracle.connect('{}/{}@{}'.format(config.NRA['user'], config.NRA['password'], config.NRA['server']))
+    return connect('NRA-DB', config.NRA)
 
 
 def get_sim_status(con, sim):

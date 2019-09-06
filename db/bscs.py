@@ -1,14 +1,11 @@
 """This module is used to interact with bscs database."""
-
-import cx_Oracle
-
 import config
-from db.db_helpers import execute_dml
+from db.db_helpers import execute_dml, connect
 
 
 def bscs_connection():
     """Returns connection to prod bscs database."""
-    return cx_Oracle.connect('{}/{}@{}'.format(config.BSCS['user'], config.BSCS['password'], config.BSCS['server']))
+    return connect('BSCS-DB', config.BSCS)
 
 
 def get_customer_id(con, custcode):

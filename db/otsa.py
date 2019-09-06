@@ -2,12 +2,12 @@
 import cx_Oracle
 
 import config
-from db.db_helpers import execute_dml
+from db.db_helpers import execute_dml, connect
 
 
 def otsa_connection():
     """Return otsa-db connection."""
-    return cx_Oracle.connect('{}/{}@{}'.format(config.OTSA['user'], config.OTSA['password'], config.OTSA['server']))
+    return connect('OTSA-DB', config.OTSA)
 
 
 def search_msisdn(con, msisdn):

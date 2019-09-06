@@ -91,9 +91,11 @@ def extract_data_from_rsw_inc(inc):
     for i, line in enumerate(lines):
         if 'Nazwa oferty' in line:
             offer_name = lines[i + 1].lower().strip()
-        if ('Numer telefonu klienta Orange / MSISDN' in line or
-            'Proszę podać numer MSISDN oraz numer koszyka, z którym jest problem:' in line) and i < len(lines) - 1:
-            msisdns = msisdn_regex.findall(lines[i + 1])
+        msisdn_keywords = ['Numer telefonu klienta Orange / MSISDN',
+                           'Proszę podać numer MSISDN oraz numer koszyka, z którym jest problem']
+        for msisdn_keyword in msisdn_keywords:
+            if msisdn_keyword in line and i < len(lines) - 1:
+                msisdns = msisdn_regex.findall(lines[i + 1])
         entitlement_keywords = ['uprawnienie', 'dodanie', 'podgranie', 'o migracj', 'podegranie', 'wgranie']
         for entitlement_keyword in entitlement_keywords:
             if entitlement_keyword in line.lower():

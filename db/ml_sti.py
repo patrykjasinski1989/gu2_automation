@@ -1,15 +1,12 @@
 """This module is used for communicating with ML STI database.
 Also with ML PROD for WZMUKs, but that is just bad design..."""
-import cx_Oracle
-
 import config
-from db.db_helpers import execute_dml
+from db.db_helpers import execute_dml, connect
 
 
 def ml_sti_connection():
     """Returns connection to ML STI database."""
-    dsn_tns = cx_Oracle.makedsn(config.ML_STI['ip'], config.ML_STI['port'], config.ML_STI['sid'])
-    return cx_Oracle.connect(user=config.ML_STI['user'], password=config.ML_STI['password'], dsn=dsn_tns)
+    return connect('NIRSW2-DB', config.ML_STI)
 
 
 def delete_account(con, login, inc):

@@ -1,13 +1,11 @@
 """This module is used for getting data from RSW database."""
-import cx_Oracle
-
 import config
-from db.db_helpers import execute_dml
+from db.db_helpers import execute_dml, connect
 
 
 def rsw_connection():
     """Return a connection to RSW database."""
-    return cx_Oracle.connect('{}/{}@{}'.format(config.RSW['user'], config.RSW['password'], config.RSW['server']))
+    return connect('RSW-DB', config.RSW)
 
 
 def get_order_id(con, msisdn, status):

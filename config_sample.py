@@ -6,13 +6,9 @@ REMEDY = {'server': '126.185.108.140',
           'user': '',
           'password': ''}
 
-OM_PTK = {'server': 'http://172.30.70.10:6655',
-          'user': '',
-          'password': ''}
-
 OTSA = {'server': '10.236.28.107:1521/OTSA',
         'user': '',
-        'password': ''}
+        'password': '!'}
 
 RSW = {'server': '10.236.28.53:1521/RSW',
        'user': '',
@@ -30,17 +26,17 @@ OPTIPOS = {'server': '10.236.28.114:1551/OPTIPOS',
            'user': '',
            'password': ''}
 
+ML_STI = {'server': '10.12.116.25:1521/NIRSW2',
+          'user': '',
+          'password': ''}
+
+ML_PROD = ML = RSW
+
 EAI = {'server': 'http://10.236.14.11:4125'}
 
-ML = RSW
-
-ML_PROD = ML
-
-ML_STI = {'user': '',
-          'password': '',
-          'ip': '10.12.116.25',
-          'port': 1521,
-          'sid': 'NIRSW2'}
+OM_PTK = {'server': 'http://172.30.70.10:6655',
+          'user': '',
+          'password': ''}
 
 OPTPOS_LOGS = {'server': '172.30.48.187',
                'user': '',

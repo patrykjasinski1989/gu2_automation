@@ -1,13 +1,12 @@
 """This module is not really used (at least not yet).
 It will be used for getting data from ML database."""
-import cx_Oracle
-
 import config
+from db.db_helpers import connect
 
 
 def ml_prod_connection():
     """Returns ML prod database connection."""
-    return cx_Oracle.connect(user=config.ML['user'], password=config.ML['password'], dsn=config.ML['server'])
+    return connect('RSW-DB', config.ML)
 
 
 def get_order_data(con, msisdn):

@@ -1,14 +1,11 @@
 """This module is used for communication with optipos-db prod."""
-
-import cx_Oracle
-
 import config
+from db.db_helpers import connect
 
 
 def optipos_connection():
     """Returns optipos-db prod connection."""
-    return cx_Oracle.connect(user=config.OPTIPOS['user'], password=config.OPTIPOS['password'],
-                             dsn=config.OPTIPOS['server'])
+    return connect('OPTIPOS-DB', config.OPTIPOS)
 
 
 def get_cart_status(con, cart_id):

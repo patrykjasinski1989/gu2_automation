@@ -1,4 +1,14 @@
 """This module contains repeatable database operations."""
+import cx_Oracle
+
+
+def connect(db_name, db_config):
+    """Returns db connection if successful and raises an exception with database name if not."""
+    try:
+        return cx_Oracle.connect('{}/{}@{}'.format(db_config['user'], db_config['password'], db_config['server']))
+    except cx_Oracle.DatabaseError as db_exception:
+        db_exception.db_name = db_name
+        raise db_exception
 
 
 def execute_dml(connection, statement, expected_rowcount=1):
