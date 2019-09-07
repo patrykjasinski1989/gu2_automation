@@ -3,7 +3,7 @@ import cx_Oracle
 
 
 def connect(db_name, db_config):
-    """Returns db connection if successful and raises an exception with database name if not."""
+    """Return db connection if successful and raise an exception with database name if not."""
     try:
         return cx_Oracle.connect('{}/{}@{}'.format(db_config['user'], db_config['password'], db_config['server']))
     except cx_Oracle.DatabaseError as db_exception:

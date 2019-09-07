@@ -6,9 +6,11 @@ REMEDY = {'server': '126.185.108.140',
           'user': '',
           'password': ''}
 
+# sales config
+
 OTSA = {'server': '10.236.28.107:1521/OTSA',
         'user': '',
-        'password': '!'}
+        'password': ''}
 
 RSW = {'server': '10.236.28.53:1521/RSW',
        'user': '',
@@ -41,3 +43,9 @@ OM_PTK = {'server': 'http://172.30.70.10:6655',
 OPTPOS_LOGS = {'server': '172.30.48.187',
                'user': '',
                'password': ''}
+
+# int config
+
+OM_TP = {'server': 'https://126.185.9.192:5555',
+         'user': '',
+         'password': ''}
