@@ -3,6 +3,7 @@ Used to be uploaded to the repository instead of config.py"""
 
 REMEDY = {'server': '126.185.108.140',
           'port': 60000,
+          'assignee': '',
           'user': '',
           'password': ''}
 

@@ -6,6 +6,7 @@ import config
 
 SERVER = config.REMEDY['server']
 PORT = config.REMEDY['port']
+ASSIGNEE = config.REMEDY['assignee']
 USER = config.REMEDY['user']
 PASSWORD = config.REMEDY['password']
 SCHEMA_INC = 'HPD:Help Desk'
@@ -105,8 +106,8 @@ def close_incident(inc, resolution):
             entry_values={
                 'Status': 'Resolved',
                 'Status_Reason': 'Rozwiązane',
-                'Assignee': 'PATRYK JASIŃSKI',
-                'Assignee Login ID': 'jasinpa4',
+                'Assignee': ASSIGNEE,
+                'Assignee Login ID': USER,
                 'Resolution': resolution
             }
         )
@@ -133,8 +134,8 @@ def hold_incident(inc, resolution):
                 'Status_Reason': 'Requester Information',
                 'Estimated Resolution Date': datetime(2018, 4, 14, 14, 4, 48),
                 # (datetime.now() + timedelta((5-datetime.now().weekday()) % 7)).strftime("%Y-%m-%d %H:%M:%S"),
-                'Assignee': 'PATRYK JASIŃSKI',
-                'Assignee Login ID': 'jasinpa4',
+                'Assignee': ASSIGNEE,
+                'Assignee Login ID': USER,
                 'Resolution': resolution
             }
         )
@@ -158,8 +159,8 @@ def assign_incident(inc):
             entry_id=inc['id'],
             entry_values={
                 'Status': 'Assigned',
-                'Assignee': 'PATRYK JASIŃSKI',
-                'Assignee Login ID': 'jasinpa4',
+                'Assignee': ASSIGNEE,
+                'Assignee Login ID': USER
             }
         )
 
@@ -199,7 +200,7 @@ def reassign_incident(inc, group):
             }
         )
 
-        if group.upper() in ['OM', 'OV']:
+        if group.upper() in ['OM_PTK', 'OV']:
             ars.update(
                 schema=SCHEMA_INC,
                 entry_id=inc['id'],
