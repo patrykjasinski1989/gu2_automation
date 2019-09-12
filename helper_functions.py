@@ -1,6 +1,10 @@
 """This module contains various helper functions."""
 import re
 
+import paramiko
+import time
+
+import config
 from db.nra import nra_connection, get_sim_status, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
 from db.otsa import check_sim
 from remedy import add_work_info, reassign_incident, get_work_info
@@ -108,3 +112,42 @@ def extract_data_from_rsw_inc(inc):
     if msisdns:
         msisdns = [msisdn.translate(''.maketrans({'-': '', ' ': ''})) for msisdn in msisdns]
     return offer_availability_, msisdns, offer_name
+
+
+def has_brm_error(work_info):
+    work_info = [entry for entry in work_info if entry['summary'] != 'Work']
+    for entry in work_info:
+        for line in entry['notes']:
+            if 'ABRM-00005  Blad podczas wywolania systemu BRM [{0}]' in line.strip():
+                return True
+    return False
+
+
+def get_tel_order_number(inc):
+    tel_pattern = re.compile(r'TEL\d{12}')
+    for line in inc['notes']:
+        tel_order_number = tel_pattern.findall(line)
+        if tel_order_number:
+            return tel_order_number[0]
+    return ''
+
+
+def get_logs_for_order(tel_order_id):
+    sudo_command = 'sudo su - webmeth1'
+    pipi_command = 'cd stat && ./pipi.sh {}'.format(tel_order_id)
+
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(config.EAI_IS['server'], username=config.EAI_IS['user'], password=config.EAI_IS['password'])
+
+    shell = ssh_client.invoke_shell()
+    shell.send(sudo_command + '\n')
+    shell.send(pipi_command + '\n')
+    time.sleep(5)
+    logs = str(shell.recv(5000)).split('\\r\\n')
+
+    stdout_length = len(logs)
+
+    if stdout_length > 6:
+        return logs[stdout_length - 4] + '\r\n' + logs[stdout_length - 3]
+    return ''
