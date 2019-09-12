@@ -64,22 +64,28 @@ def get_all_incidents(group):
 
         entries = ars.query(
             schema=SCHEMA_INC,
-            qualifier=""" 'Status' = "Assigned"
-                                 AND 'Assigned Group*+' = "%s" 
+            qualifier=""" 'Status' = "Assigned" 
+                                 AND 'Assigned Group*+' = "%s"  
+                                 AND 'Assignee' = NULL 
                                  """ % group,
-            fields=['Incident Number', 'Detailed Decription', 'Description']
+            fields=['Incident Number', 'Detailed Decription', 'Description', 'Assignee']
         )
 
         incidents = []
         for entry_id, entry_values in entries:
             for field, value in entry_values.items():
                 if field == 'Detailed Decription':
-                    notes = value.split('\n')
+                    if value:
+                        notes = value.split('\n')
+                    else:
+                        notes = ''
                 elif field == 'Incident Number':
                     inc = value
                 elif field == 'Description':
                     summary = value
-            incidents.append({'id': entry_id, 'inc': inc, 'notes': notes, 'summary': summary})
+                elif field == 'Assignee':
+                    assignee = value
+            incidents.append({'id': entry_id, 'inc': inc, 'notes': notes, 'summary': summary, 'assignee': assignee})
 
         return incidents
 
@@ -183,7 +189,8 @@ def reassign_incident(inc, group):
         'VC3_BSS_OM_PTK': 'SGP000000051464',
         'VC3_BSS_NRA': 'SGP000000051463',
         'VC3_BSS_OV': 'SGP000000051269',
-        'Servicedesk - KONTA': 'SGP000000040569'}
+        'Servicedesk - KONTA': 'SGP000000040569',
+        'APLIKACJE_OBRM_DOSTAWCA': 'SGP000000016581'}
 
     try:
         ars = ARS(
@@ -368,6 +375,13 @@ def has_attachment(work_info):
 def is_work_info_empty(work_info):
     """Check if there was any activity in work info."""
     return len(work_info) < 2
+
+
+def has_exactly_one_entry(work_info):
+    """Check if work info has exactly one human-generated entry."""
+    if not work_info:
+        return False
+    return len([entry for entry in work_info if entry['summary'] != 'Work']) == 1
 
 
 def get_pending_incidents(groups):
