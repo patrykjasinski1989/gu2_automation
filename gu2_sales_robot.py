@@ -229,7 +229,8 @@ if __name__ == '__main__':
         ml_wzmuk_sti()
         ml_wzmuk_prod()
     except cx_Oracle.DatabaseError as db_exception:
-        print('Database error: {}.\nCreating lock file and exiting...'.format(db_exception))
+        print('Database error: {}: {}.\nCreating lock file and exiting...'.
+              format(db_exception.db_name.lower(), db_exception))
         open(LOCK_FILE, 'w+')
         exit(37)
     except paramiko.ssh_exception.AuthenticationException as ssh_exception:

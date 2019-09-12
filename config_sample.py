@@ -50,3 +50,7 @@ OPTPOS_LOGS = {'server': '172.30.48.187',
 OM_TP = {'server': 'https://126.185.9.192:5555',
          'user': '',
          'password': ''}
+
+EAI_IS = {'server': '',
+          'user': '',
+          'password': ''}

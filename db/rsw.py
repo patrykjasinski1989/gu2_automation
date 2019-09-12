@@ -63,6 +63,8 @@ def make_offer_available(con, msisdn, offer_id_=6021):
 
 def get_offer_id_by_name(con, offer_name):
     """Find offer id by name."""
+    if not offer_name:
+        return None
     offer_name = ''.join([c if ord(c) < 128 else '_' for c in offer_name])
     cur = con.cursor()
     stmt = """select id_oferty from rsw.rsw_oferty where lower(nazwa_oferty) like lower('%{}%')""".format(offer_name)

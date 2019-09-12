@@ -67,26 +67,29 @@ def process_contracts(otsa, contract, inc):
 
 def to_cancel(inc):
     """Check if the contract from the ticket should be cancelled."""
+    cancel_phrases = ['proszę o anul', 'proszę anulować', 'prosze o anul', 'prośba o anul', 'anulowanie umowy',
+                      'rezygn']
     for line in inc['notes']:
         line = line.lower()
-        if 'proszę o anul' in line or 'proszę anulować' in line or 'prosze o anul' in line or 'prośba o anul' in line \
-                or 'anulowanie umowy' in line:
-            return True
+        for phrase in cancel_phrases:
+            if phrase in line:
+                return True
     return False
 
 
 def to_process(inc):
     """Check if the contract from the ticket should be completed."""
+    process_phrases = ['proszę zatw', 'proszę o zatw', 'proszę przeproces', 'proszę o przeproces']
     for line in inc['notes']:
         line = line.lower()
-        if 'proszę zatw' in line or 'proszę o zatw' in line \
-                or 'proszę przeproces' in line or 'proszę o przeproces' in line:
-            return True
+        for phrase in process_phrases:
+            if phrase in line:
+                return True
     return False
 
 
 def is_magnum(otsa, contract):
-    """CHeck if the contract has one of promotions from the Magnum project."""
+    """Check if the contract has one of promotions from the Magnum project."""
     magnum_offers = get_magnum_offers(otsa)
     promotion_codes = get_promotion_codes(otsa, contract['trans_code'])
     for code in promotion_codes:
@@ -117,7 +120,7 @@ def process_2y(otsa, contract, inc):
 
     for line in inc['notes']:
         line = line.lower()
-        if 'wstrzym' in line and 'po stronie om' in line and not is_magnum(otsa, contract):
+        if False:  # 'wstrzym' in line and 'po stronie om' in line and not is_magnum(otsa, contract):
             resolution = 'Umowa ' + contract['trans_num'] + \
                          ' wstrzymana po stronie OM. Jest to poprawny biznesowo status. ' \
                          'Proszę anulować lub zatwierdzić. W razie kłopotów proszę o kontakt z Dealer Support'
