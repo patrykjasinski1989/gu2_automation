@@ -133,6 +133,13 @@ def get_tel_order_number(inc):
 
 
 def get_logs_for_order(tel_order_id):
+    def delete_unnecessary_lines(logs_):
+        actual_logs = logs_
+        phrases_to_skip = ['Last login:', config.EAI_IS['user'], 'webmeth1', 'pipi.sh']
+        for phrase in phrases_to_skip:
+            actual_logs = [line for line in actual_logs if phrase not in line]
+        return actual_logs
+
     sudo_command = 'sudo su - webmeth1'
     pipi_command = 'cd stat && ./pipi.sh {}'.format(tel_order_id)
 
@@ -146,8 +153,7 @@ def get_logs_for_order(tel_order_id):
     time.sleep(5)
     logs = str(shell.recv(5000)).split('\\r\\n')
 
-    stdout_length = len(logs)
-
-    if stdout_length > 6:
-        return logs[stdout_length - 4] + '\r\n' + logs[stdout_length - 3]
+    logs = delete_unnecessary_lines(logs)
+    if len(logs) == 3:
+        return '\r\n'.join(logs)
     return ''
