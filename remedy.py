@@ -383,7 +383,7 @@ def has_exactly_one_entry(work_info):
     """Check if work info has exactly one human-generated entry."""
     if not work_info:
         return False
-    return len([entry for entry in work_info if entry['summary'] != 'Work']) == 1
+    return len([entry for entry in work_info if 'Work' not in entry['summary']]) == 1
 
 
 def get_pending_incidents(groups):

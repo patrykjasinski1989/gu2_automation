@@ -115,10 +115,10 @@ def extract_data_from_rsw_inc(inc):
 
 
 def has_brm_error(work_info):
-    work_info = [entry for entry in work_info if entry['summary'] != 'Work']
+    work_info = [entry for entry in work_info if 'Work' not in entry['summary']]
     for entry in work_info:
         for line in entry['notes']:
-            if 'ABRM-00005  Blad podczas wywolania systemu BRM [{0}]' in line.strip():
+            if 'Blad podczas wywolania systemu BRM' in line.strip():
                 return True
     return False
 
