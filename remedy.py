@@ -227,6 +227,8 @@ def reassign_incident(inc, group):
                 }
             )
 
+        print('{} przekazany na grupę {}'.format(inc['inc'], group))
+
     except ARSError as ars_ex:
         print('ERROR: {}'.format(ars_ex))
     finally:
