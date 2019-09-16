@@ -198,14 +198,27 @@ def reassign_incident(inc, group):
             user=USER, password=PASSWORD
         )
 
-        ars.update(
-            schema=SCHEMA_INC,
-            entry_id=inc['id'],
-            entry_values={
-                'Assigned Group': group_name,
-                'Assigned Group ID': group_ids[group_name]
-            }
-        )
+        if group_name == 'APLIKACJE_OBRM_DOSTAWCA':
+            ars.update(
+                schema=SCHEMA_INC,
+                entry_id=inc['id'],
+                entry_values={
+                    'Assigned Group': group_name,
+                    'Assigned Group ID': group_ids[group_name],
+                    'Assigned Support Company': 'TELEKOMUNIKACJA POLSKA S.A.',
+                    'Assigned Support Organization': 'Departament Rozwoju i Utrzymania Systemów IT',
+                }
+            )
+
+        else:
+            ars.update(
+                schema=SCHEMA_INC,
+                entry_id=inc['id'],
+                entry_values={
+                    'Assigned Group': group_name,
+                    'Assigned Group ID': group_ids[group_name]
+                }
+            )
 
         if group.upper() in ['OM_PTK', 'OV']:
             ars.update(
