@@ -11,8 +11,9 @@ def handle_brm_errors():
             tel_order_number = get_tel_order_number(inc)
             if tel_order_number:
                 logs = get_logs_for_order(tel_order_number)
-                add_work_info(inc, 'VC_OM', logs)
-                reassign_incident(inc, 'APLIKACJE_OBRM_DOSTAWCA')
+                if logs:
+                    add_work_info(inc, 'VC_OM', logs)
+                    reassign_incident(inc, 'APLIKACJE_OBRM_DOSTAWCA')
 
 
 if __name__ == '__main__':
