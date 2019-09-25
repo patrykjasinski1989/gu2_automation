@@ -1,8 +1,8 @@
 """This module contains various helper functions."""
 import re
+import time
 
 import paramiko
-import time
 
 import config
 from db.nra import nra_connection, get_sim_status, set_sim_status_nra, set_sim_status_bscs, set_imsi_status_bscs
@@ -138,6 +138,7 @@ def get_logs_for_order(tel_order_id):
         phrases_to_skip = ['Last login:', config.EAI_IS['user'], 'webmeth1', 'pipi.sh']
         for phrase in phrases_to_skip:
             actual_logs = [line for line in actual_logs if phrase not in line]
+        actual_logs = [line for line in actual_logs if line]
         return actual_logs
 
     sudo_command = 'sudo su - webmeth1'
@@ -154,6 +155,6 @@ def get_logs_for_order(tel_order_id):
     logs = str(shell.recv(5000)).split('\\r\\n')
 
     logs = delete_unnecessary_lines(logs)
-    if len(logs) == 3:
+    if len(logs) == 2:
         return '\r\n'.join(logs)
     return ''

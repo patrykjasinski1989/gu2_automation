@@ -5,10 +5,10 @@ __author__ = "Patryk Jasiński <pjasinski@bluesoft.com>"
 
 import os
 import re
+from datetime import datetime
 
 import cx_Oracle
 import paramiko
-from datetime import datetime
 
 from db.otsa import otsa_connection, unlock_account
 from db.rsw import rsw_connection, get_latest_order, make_offer_available, get_offer_id_by_name
@@ -107,8 +107,15 @@ def unlock_accounts():
         'otsa login dealersupport DS.'
     )
 
+    incidents += get_incidents(
+        'VC3_BSS_OPTIPOS_MOBILE',
+        '(129) OPTIPOS Mobile',
+        '(129I) PROBLEM Z LOGOWANIEM',
+        'login OTSA'
+    )
+
     sd_tiers = ['(129RI) OKI i SOHO - AKTYWACJA KONTA', '(129RA) KKB,ADT - AKTYWACJA KONTA',
-                '(129RK) ZŁD Aktywacja/Modyfikacja konta']
+                '(129RK) ZŁD Aktywacja/Modyfikacja konta', '(129RH) OKB i TAM - AKTYWACJA KONTA']
     for tier2 in sd_tiers:
         incidents += get_incidents(
             'VC3_BSS_OPTIPOS_MOBILE',

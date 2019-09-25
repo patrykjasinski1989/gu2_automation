@@ -1,5 +1,6 @@
 """This module is used for communicating with BMC Remedy ARS server."""
 from datetime import datetime
+
 from pyremedy import ARS, ARSError
 
 import config
@@ -451,7 +452,7 @@ def get_resolved_incidents(groups):
 
         qualifier = """'Status' = "Resolved" AND ("""
         for group in groups:
-            qualifier += """'Assigned Group*+' = "%s" OR """ % group
+            qualifier += """ '1000000217' = "%s" OR """ % group
         qualifier = qualifier[:-3]
         qualifier += ")"
 

@@ -161,8 +161,8 @@ def process_2b(otsa, contract, inc):
     if 'ponowione' in inc['summary']:
         resolution = 'Umowa ' + contract['trans_num'] + ' przekazana do realizacji.'
     elif contract['process_error'] != -31000:
-        work_info = get_work_info(inc)
-        if not is_work_info_empty(work_info):
+        work_info_ = get_work_info(inc)
+        if not is_work_info_empty(work_info_):
             return '', ''
 
         if contract['trans_type'][0] == 'T':
