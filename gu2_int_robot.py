@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import sys
+
 from helper_functions import has_brm_error, get_tel_order_number, get_logs_for_order
 from remedy import get_all_incidents, get_work_info, has_exactly_one_entry, add_work_info, reassign_incident
 
@@ -11,9 +13,12 @@ def handle_brm_errors():
             tel_order_number = get_tel_order_number(inc)
             if tel_order_number:
                 logs = get_logs_for_order(tel_order_number)
-                if logs:
-                    add_work_info(inc, 'VC_OM', logs)
+                logs_string = '\r\n'.join(logs)
+                if len(logs) == 2:
+                    add_work_info(inc, 'VC_OM', logs_string)
                     reassign_incident(inc, 'APLIKACJE_OBRM_DOSTAWCA')
+                else:
+                    print('{} {} {}'.format(inc['inc'], tel_order_number, logs_string), file=sys.stderr)
 
 
 if __name__ == '__main__':

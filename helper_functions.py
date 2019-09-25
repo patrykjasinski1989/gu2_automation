@@ -137,8 +137,8 @@ def get_logs_for_order(tel_order_id):
         actual_logs = logs_
         phrases_to_skip = ['Last login:', config.EAI_IS['user'], 'webmeth1', 'pipi.sh']
         for phrase in phrases_to_skip:
-            actual_logs = [line for line in actual_logs if phrase not in line]
-        actual_logs = [line for line in actual_logs if line]
+            actual_logs = [line.strip() for line in actual_logs if phrase not in line]
+        actual_logs = [line for line in actual_logs if line and line != '\'']
         return actual_logs
 
     sudo_command = 'sudo su - webmeth1'
@@ -155,6 +155,4 @@ def get_logs_for_order(tel_order_id):
     logs = str(shell.recv(5000)).split('\\r\\n')
 
     logs = delete_unnecessary_lines(logs)
-    if len(logs) == 2:
-        return '\r\n'.join(logs)
-    return ''
+    return logs
