@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+from time import sleep
 
 from helper_functions import has_brm_error, get_tel_order_number, get_logs_for_order
 from om_tp import get_order_info, get_process_errors
@@ -18,6 +19,7 @@ def handle_brm_errors():
                 if len(logs) == 2:
                     add_work_info(inc, 'VC_OM', logs_string)
                     reassign_incident(inc, 'APLIKACJE_OBRM_DOSTAWCA')
+                    sleep(30)
                 else:
                     process_errors = get_process_errors(get_order_info(tel_order_number))
                     error_id = process_errors[0][0]
