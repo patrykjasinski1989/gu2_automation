@@ -22,7 +22,7 @@ def process_sims(sims, otsa, inc):
     for sim in sims:
         partial_resolution = ''
         result = check_sim(otsa, sim)
-        result = [r for r in result if r['status'] not in ('3D', '3G')]
+        result = [r for r in result if r['status'] not in ('3D', '3G', '9')]
         if not result:
             wi_notes = ''
             sim_status = get_sim_status(nra, sim)
