@@ -34,7 +34,9 @@ def get_process_errors(order_info):
     errors = order_info.find_all('tr', class_='dark_row_red')
     process_errors = []
     for error in errors:
-        process_errors.append(error.get_text().replace('\xa0', ', ').replace('\n', ''))
+        process_errors.append(error.get_text().replace('\xa0', '').split('\n'))
+    for element in process_errors:
+        element.pop(0)
     return process_errors
 
 
