@@ -191,7 +191,9 @@ def reassign_incident(inc, group):
         'VC3_BSS_NRA': 'SGP000000051463',
         'VC3_BSS_OV': 'SGP000000051269',
         'Servicedesk - KONTA': 'SGP000000040569',
-        'APLIKACJE_OBRM_DOSTAWCA': 'SGP000000016581'}
+        'APLIKACJE_OBRM_DOSTAWCA': 'SGP000000016581',
+        'VC3_BSS_OV_TP': 'SGP000000051165',
+    }
 
     try:
         ars = ARS(
@@ -221,7 +223,7 @@ def reassign_incident(inc, group):
                 }
             )
 
-        if group.upper() in ['OM_PTK', 'OV']:
+        if group.upper() in ['OM_PTK', 'OV'] and group.upper not in ['OV_TP']:
             ars.update(
                 schema=SCHEMA_INC,
                 entry_id=inc['id'],

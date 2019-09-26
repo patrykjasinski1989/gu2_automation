@@ -1,6 +1,8 @@
 #!/usr/env/bin python3
 """This is the script used to close the tickets. GU2 Sales Incidents for OPL to be exact.
 Should be broken into smaller parts..."""
+import config
+
 __author__ = "Patryk Jasiński <pjasinski@bluesoft.com>"
 
 import os
@@ -16,7 +18,8 @@ from helper_functions import process_sims, find_login, extract_data_from_rsw_inc
 from ml_wzmuk_processing import ml_wzmuk_sti, ml_wzmuk_prod
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, \
-    get_pending_incidents, assign_incident, get_all_incidents
+    get_pending_incidents, assign_incident, get_all_incidents, get_work_info, has_exactly_one_entry, add_work_info, \
+    reassign_incident
 
 
 def process_transactions():
@@ -220,12 +223,58 @@ def empty_rsw_inc():
             print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
 
 
+def optipos_tp_errors():
+    pesel_or_nip_regex = re.compile(r'\d{10,11}')
+    incidents = get_all_incidents('VC3_BSS_OPTIPOS_FIX')
+    for inc in incidents:
+        if not has_exactly_one_entry(get_work_info(inc)):
+            continue
+
+        lines = inc['notes']
+        pesel_or_nip_string = ''
+        for i, line in enumerate(lines):
+            if 'Proszę podać numer PESEL lub NIP klienta:' in line:
+                pesel_or_nip_string = pesel_or_nip_regex.findall(lines[i + 1])[0].strip()
+        if not pesel_or_nip_string:
+            continue
+
+        get_session_data_cmd = """ 
+            ssh hooter "find /nas/logs/optineo -maxdepth 1 -name 'optineo_*.log*' -mtime -7 | 
+            xargs grep {} | cut -d' ' -f1,2,4 | sed 's/:/\ /' | sort -k2 | tail -1" """.format(pesel_or_nip_string)
+        get_logs_cmd = 'ssh hooter "fgrep {} {} | grep xml | tail -2"'
+
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(config.OPTPOS_LOGS['server'], username=config.OPTPOS_LOGS['user'],
+                           password=config.OPTPOS_LOGS['password'])
+        _, ssh_stdout, _ = ssh_client.exec_command(get_session_data_cmd.format(pesel_or_nip_string))
+        session_data = ssh_stdout.readlines()
+        if not session_data:
+            continue
+
+        session_data = session_data[0].strip().split(' ')
+        file, session = session_data[0], session_data[3]
+        _, ssh_stdout, _ = ssh_client.exec_command(get_logs_cmd.format(session, file))
+        logs = ssh_stdout.readlines()
+
+        # print(inc['inc'], file, session)
+
+        input, output = logs[0], logs[1]
+        if ('<errorDesc>Sukces.</errorDesc>' in output and
+            ('registerExternalOrderOutput' in output or 'configureCrmCustomerOutput' in output)) or \
+                'INVALID' in output or 'PSCRM' in output:
+            wi_notes = 'Prośba o weryfikację:\r\n\r\n{}\r\n{}\r\n'.format(input, output)
+            add_work_info(inc, 'VC_OPTIPOS', wi_notes)
+            reassign_incident(inc, 'VC3_BSS_OV_TP')
+
+
 if __name__ == '__main__':
 
     LOCK_FILE = 'lock'
     if os.path.exists(LOCK_FILE):
         print('Lock file exists. Remove it to run the program.')
         exit(37)
+
     try:
         unlock_accounts()
         process_transactions()
@@ -235,11 +284,14 @@ if __name__ == '__main__':
         empty_rsw_inc()
         ml_wzmuk_sti()
         ml_wzmuk_prod()
+        optipos_tp_errors()
+
     except cx_Oracle.DatabaseError as db_exception:
         print('Database error: {}: {}.\nCreating lock file and exiting...'.
               format(db_exception.db_name.lower(), db_exception))
         open(LOCK_FILE, 'w+')
         exit(37)
+
     except paramiko.ssh_exception.AuthenticationException as ssh_exception:
         print('SSH error: {}.\nCreating lock file and exiting...'.format(ssh_exception))
         open(LOCK_FILE, 'w+')
