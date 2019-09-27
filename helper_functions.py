@@ -152,7 +152,7 @@ def get_logs_for_order(tel_order_id):
     shell.send(sudo_command + '\n')
     shell.send(pipi_command + '\n')
     time.sleep(5)
-    logs = str(shell.recv(5000)).split('\\r\\n')
+    logs = str(shell.recv(10000)).split('\\r\\n')
 
     logs = delete_unnecessary_lines(logs)
     return logs
