@@ -22,7 +22,9 @@ def handle_brm_errors():
                     sleep(30)
                 else:
                     process_errors = get_process_errors(get_order_info(tel_order_number))
-                    error_id = process_errors[0][0]
+                    error_id = ''
+                    if process_errors and process_errors[0]:
+                        error_id = process_errors[0][0]
                     print('{} {} {} {}'.format(inc['inc'], error_id, tel_order_number, logs_string), file=sys.stderr)
 
 
