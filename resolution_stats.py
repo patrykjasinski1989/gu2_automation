@@ -5,11 +5,12 @@ from remedy import get_resolved_incidents
 TOTAL = 'TOTAL'
 GROUPS = ['CDT', 'CV', 'ML', 'OPTIPOS_FIX', 'OPTIPOS_MOBILE', 'RSW', 'SIS']
 
-GROUPS = ['CRM_MOBILE', 'ICC', 'MVNE', 'ISCO', 'ALLEINFO', 'CBS', 'CRM_FIX', 'MOPUP', 'OSIW', 'SOKX', 'REDA', 'TIGER',
-          'BDAA', 'EAI_PTK', 'IMEIBL', 'JAZZ', 'NRA', 'OM_PTK', 'OV', 'PREAKTYWATOR', 'ODS', 'OM_TP', 'OV_TP', 'EAI_TP',
-          'WMM', 'CV', 'CDT', 'ML', 'OPTIPOS_MOBILE', 'RSW', 'SIS', 'OPTIPOS_FIX', 'CCGW', 'EPGW', 'EXTRANET', 'FM',
-          'IPK', 'KSRZ', 'LBS', 'LBS_PLI_CBD', 'MOBLGW', 'NOTYFIKATOR_PTK', 'NOTYFIKATOR_TP', 'QUICKDOC', 'RPK',
-          'SMSEX', 'UCPGW', 'UCPSMS', 'BAM']
+
+# GROUPS = ['CRM_MOBILE', 'ICC', 'MVNE', 'ISCO', 'ALLEINFO', 'CBS', 'CRM_FIX', 'MOPUP', 'OSIW', 'SOKX', 'REDA', 'TIGER',
+#           'BDAA', 'EAI_PTK', 'IMEIBL', 'JAZZ', 'NRA', 'OM_PTK', 'OV', 'PREAKTYWATOR', 'ODS', 'OM_TP', 'OV_TP', 'EAI_TP',
+#           'WMM', 'CV', 'CDT', 'ML', 'OPTIPOS_MOBILE', 'RSW', 'SIS', 'OPTIPOS_FIX', 'CCGW', 'EPGW', 'EXTRANET', 'FM',
+#           'IPK', 'KSRZ', 'LBS', 'LBS_PLI_CBD', 'MOBLGW', 'NOTYFIKATOR_PTK', 'NOTYFIKATOR_TP', 'QUICKDOC', 'RPK',
+#           'SMSEX', 'UCPGW', 'UCPSMS', 'BAM']
 
 
 def aggregate_stats(stats, aggr1, aggr2):
