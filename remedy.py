@@ -201,6 +201,27 @@ def reassign_incident(inc, group):
             user=USER, password=PASSWORD
         )
 
+        if group.upper() in ['OM_PTK', 'OV'] and group.upper not in ['OV_TP']:
+            ars.update(
+                schema=SCHEMA_INC,
+                entry_id=inc['id'],
+                entry_values={
+                    'Categorization Tier 1': '000_incydent/awaria/uszkodzenie',
+                    'Categorization Tier 2': 'OM',
+                    'Categorization Tier 3': 'OM - TECHNIKA - INNE'
+                }
+            )
+        elif group.upper() == 'NRA':
+            ars.update(
+                schema=SCHEMA_INC,
+                entry_id=inc['id'],
+                entry_values={
+                    'Categorization Tier 1': '000_incydent/awaria/uszkodzenie',
+                    'Categorization Tier 2': 'NRA',
+                    'Categorization Tier 3': 'NRA - PROBLEM Z INNYMI DANYMI'
+                }
+            )
+
         if group_name == 'APLIKACJE_OBRM_DOSTAWCA':
             ars.update(
                 schema=SCHEMA_INC,
@@ -212,7 +233,6 @@ def reassign_incident(inc, group):
                     'Assigned Support Organization': 'Departament Rozwoju i Utrzymania Systemów IT',
                 }
             )
-
         else:
             ars.update(
                 schema=SCHEMA_INC,
@@ -220,26 +240,6 @@ def reassign_incident(inc, group):
                 entry_values={
                     'Assigned Group': group_name,
                     'Assigned Group ID': group_ids[group_name]
-                }
-            )
-
-        if group.upper() in ['OM_PTK', 'OV'] and group.upper not in ['OV_TP']:
-            ars.update(
-                schema=SCHEMA_INC,
-                entry_id=inc['id'],
-                entry_values={
-                    'Categorization Tier 2': 'OM',
-                    'Categorization Tier 3': 'OM - TECHNIKA - INNE'
-                }
-            )
-
-        elif group.upper() == 'NRA':
-            ars.update(
-                schema=SCHEMA_INC,
-                entry_id=inc['id'],
-                entry_values={
-                    'Categorization Tier 2': 'NRA',
-                    'Categorization Tier 3': 'NRA - PROBLEM Z INNYMI DANYMI'
                 }
             )
 
