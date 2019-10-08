@@ -204,7 +204,7 @@ def send_error_to_ov(inc, contract):
     grep_command = 'grep {} {} | grep INVOKE | tail -2 | grep -v ">0</errorCode>" | grep -v createInteraction'
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(config.OPTPOS_LOGS['server'],
+    ssh.connect(config.OPTPOS_LOGS['server'], allow_agent=False,
                 username=config.OPTPOS_LOGS['user'], password=config.OPTPOS_LOGS['password'])
     _, ssh_stdout, _ = ssh.exec_command(grep_command.format(contract['trans_code'], grep_files))
     logs = ssh_stdout.readlines()

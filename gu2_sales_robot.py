@@ -246,7 +246,7 @@ def optipos_tp_errors():
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh_client.connect(config.OPTPOS_LOGS['server'], username=config.OPTPOS_LOGS['user'],
-                           password=config.OPTPOS_LOGS['password'])
+                           password=config.OPTPOS_LOGS['password'], allow_agent=False)
         _, ssh_stdout, _ = ssh_client.exec_command(get_session_data_cmd.format(pesel_or_nip_string))
         session_data = ssh_stdout.readlines()
         if not session_data:
@@ -257,13 +257,9 @@ def optipos_tp_errors():
         _, ssh_stdout, _ = ssh_client.exec_command(get_logs_cmd.format(session, file))
         logs = ssh_stdout.readlines()
 
-        # print(inc['inc'], file, session)
-
-        input, output = logs[0], logs[1]
-        if ('<errorDesc>Sukces.</errorDesc>' in output and
-            ('registerExternalOrderOutput' in output or 'configureCrmCustomerOutput' in output)) or \
-                'INVALID' in output or 'PSCRM' in output:
-            wi_notes = 'Prośba o weryfikację:\r\n\r\n{}\r\n{}\r\n'.format(input, output)
+        input_, output = logs[0], logs[1]
+        if 'INVALID' in output or 'PSCRM' in output:
+            wi_notes = 'Prośba o weryfikację:\r\n\r\n{}\r\n{}\r\n'.format(input_, output)
             add_work_info(inc, 'VC_OPTIPOS', wi_notes)
             reassign_incident(inc, 'VC3_BSS_OV_TP')
 
