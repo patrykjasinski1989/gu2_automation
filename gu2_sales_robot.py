@@ -15,7 +15,6 @@ import paramiko
 from db.otsa import otsa_connection, unlock_account
 from db.rsw import rsw_connection, get_latest_order, make_offer_available, get_offer_id_by_name
 from helper_functions import process_sims, find_login, extract_data_from_rsw_inc
-from ml_wzmuk_processing import ml_wzmuk_sti, ml_wzmuk_prod
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, \
     get_pending_incidents, assign_incident, get_all_incidents, get_work_info, has_exactly_one_entry, add_work_info, \
@@ -234,7 +233,10 @@ def optipos_tp_errors():
         pesel_or_nip_string = ''
         for i, line in enumerate(lines):
             if 'Proszę podać numer PESEL lub NIP klienta:' in line:
-                pesel_or_nip_string = pesel_or_nip_regex.findall(lines[i + 1])[0].strip()
+                pesel_or_nip_regex_search_result = pesel_or_nip_regex.findall(lines[i + 1])
+                if not pesel_or_nip_regex_search_result:
+                    continue
+                pesel_or_nip_string = pesel_or_nip_regex_search_result[0].strip()
         if not pesel_or_nip_string:
             continue
 
@@ -272,14 +274,14 @@ if __name__ == '__main__':
         exit(37)
 
     try:
-        unlock_accounts()
-        process_transactions()
-        release_resources()
-        close_pending_rsw()
-        offer_availability()
-        empty_rsw_inc()
-        ml_wzmuk_sti()
-        ml_wzmuk_prod()
+        # unlock_accounts()
+        # process_transactions()
+        # release_resources()
+        # close_pending_rsw()
+        # offer_availability()
+        # empty_rsw_inc()
+        # ml_wzmuk_sti()
+        # ml_wzmuk_prod()
         optipos_tp_errors()
 
     except cx_Oracle.DatabaseError as db_exception:
