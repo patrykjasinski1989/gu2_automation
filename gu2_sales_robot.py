@@ -2,6 +2,7 @@
 """This is the script used to close the tickets. GU2 Sales Incidents for OPL to be exact.
 Should be broken into smaller parts..."""
 import config
+from ml_wzmuk_processing import ml_wzmuk_sti, ml_wzmuk_prod
 
 __author__ = "Patryk Jasiński <pjasinski@bluesoft.com>"
 
