@@ -274,14 +274,14 @@ if __name__ == '__main__':
         exit(37)
 
     try:
-        # unlock_accounts()
-        # process_transactions()
-        # release_resources()
-        # close_pending_rsw()
-        # offer_availability()
-        # empty_rsw_inc()
-        # ml_wzmuk_sti()
-        # ml_wzmuk_prod()
+        unlock_accounts()
+        process_transactions()
+        release_resources()
+        close_pending_rsw()
+        offer_availability()
+        empty_rsw_inc()
+        ml_wzmuk_sti()
+        ml_wzmuk_prod()
         optipos_tp_errors()
 
     except cx_Oracle.DatabaseError as db_exception:
