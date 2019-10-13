@@ -6,7 +6,7 @@ password=$$$
 
 sudo apt-get update && sudo apt-get install -y git python3 python3-pip libaio1 unzip
 
-git clone https://${username}:${password}@bitbucket.org/zxnak37/gu2_automation.git
+git clone https://${username}:${password}@github.com/patrykjasinski1989/gu2_automation.git
 cd gu2_automation || exit 37
 mv config_sample.py config.py
 pip3 install --no-cache-dir -r requirements.txt
@@ -21,5 +21,5 @@ sh -c "echo /opt/oracle/instantclient_18_3 > /etc/ld.so.conf.d/oracle-instantcli
 
 ldconfig
 
-git clone https://github.com/lewyg/pyremedy.git
+git clone https://github.com/patrykjasinski1989/pyremedy.git
 pip3 install pyremedy/
