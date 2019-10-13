@@ -51,6 +51,6 @@ OM_TP = {'server': 'https://126.185.9.192:5555',
          'user': '',
          'password': ''}
 
-EAI_IS = {'server': '',
+EAI_IS = {'server': '126.177.38.116',
           'user': '',
           'password': ''}
