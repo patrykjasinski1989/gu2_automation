@@ -283,6 +283,7 @@ def tester_accounts():
                 resolution = 'Powiązano konto {} z IFS.'.format(login)
                 close_incident(inc, resolution)
                 print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
+    optipot3.close()
 
 
 if __name__ == '__main__':
