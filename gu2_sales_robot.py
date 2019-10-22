@@ -273,6 +273,7 @@ def tester_accounts():
                               '(129S) TESTER - POWIĄZANIE IFS', 'otsa sprzedaż')
     optipot3 = optipos_sti_connection()
     for inc in incidents:
+        login = None
         lines = inc['notes']
         for i, line in enumerate(lines):
             if 'Podaj login testera' in line:
