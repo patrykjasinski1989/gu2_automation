@@ -397,7 +397,7 @@ def is_work_info_empty(work_info):
 
 def has_exactly_one_entry(work_info):
     """Check if work info has exactly one human-generated entry."""
-    if not work_info:
+    if not work_info or len(work_info) < 2:
         return False
     return len([entry for entry in work_info if 'Work' not in entry['summary']]) == 1
 
