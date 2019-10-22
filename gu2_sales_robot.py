@@ -2,6 +2,7 @@
 """This is the script used to close the tickets. GU2 Sales Incidents for OPL to be exact.
 Should be broken into smaller parts..."""
 import config
+from db.optipos_ptk import optipos_sti_connection, link_login_with_ifs
 from ml_wzmuk_processing import ml_wzmuk_sti, ml_wzmuk_prod
 
 __author__ = "Patryk Jasiński <pjasinski@bluesoft.com>"
@@ -267,6 +268,23 @@ def optipos_tp_errors():
             reassign_incident(inc, 'VC3_BSS_OV_TP')
 
 
+def tester_accounts():
+    incidents = get_incidents('VC3_BSS_OPTIPOS_MOBILE', '(129) OPTIPOS Mobile',
+                              '(129S) TESTER - POWIĄZANIE IFS', 'otsa sprzedaż')
+    optipot3 = optipos_sti_connection()
+    for inc in incidents:
+        lines = inc['notes']
+        for i, line in enumerate(lines):
+            if 'Podaj login testera' in line:
+                login = lines[i + 1].strip()
+        if login:
+            row_count = link_login_with_ifs(optipot3, login)
+            if row_count == 1:
+                resolution = 'Powiązano konto {} z IFS.'.format(login)
+                close_incident(inc, resolution)
+                print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
+
+
 if __name__ == '__main__':
 
     LOCK_FILE = 'lock'
@@ -284,6 +302,7 @@ if __name__ == '__main__':
         ml_wzmuk_sti()
         ml_wzmuk_prod()
         optipos_tp_errors()
+        tester_accounts()
 
     except cx_Oracle.DatabaseError as db_exception:
         print('Database error: {}: {}.\nCreating lock file and exiting...'.

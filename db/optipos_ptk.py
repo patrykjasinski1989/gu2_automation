@@ -1,11 +1,16 @@
 """This module is used for communication with optipos-db prod."""
 import config
-from db.db_helpers import connect
+from db.db_helpers import connect, execute_dml
 
 
 def optipos_connection():
     """Returns optipos-db prod connection."""
     return connect('OPTIPOS-DB', config.OPTIPOS)
+
+
+def optipos_sti_connection():
+    """Returns optipos-db STI (test) connection."""
+    return connect('OPTIPOT3-DB', config.OPTIPOS_STI)
 
 
 def get_cart_status(con, cart_id):
@@ -27,6 +32,11 @@ def set_cart_status(con, cart_id, status):
     else:
         con.rollback()
     return cur.rowcount
+
+
+def link_login_with_ifs(con, login):
+    stmt = "Insert into dicts.EXTERNAL_IDENTIFIERS_CBT Values (33771, 'OTSA', '{}')".format(login)
+    return execute_dml(con, stmt)
 
 
 if __name__ == "__main__":

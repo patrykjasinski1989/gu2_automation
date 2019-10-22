@@ -33,6 +33,10 @@ ML_STI = {'server': '10.12.116.25:1521/NIRSW2',
           'user': '',
           'password': ''}
 
+OPTIPOS_STI = {'server': '10.12.116.204:1521/OPTIPOT3',
+               'user': '',
+               'password': ''}
+
 ML_PROD = ML = RSW
 
 EAI = {'server': 'http://10.236.14.11:4125'}
