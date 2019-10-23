@@ -73,14 +73,14 @@ def find_login(inc):
     if not login:
         work_info = get_work_info(inc)
         for entry in work_info:
-            notes = ' '.join(entry['notes']).lower().replace(':', ' ').split()
+            notes = ' '.join(entry['notes']).lower().replace(':', ' ').replace('.', ' ').split()
             if 'sd' in entry['summary'].lower() and 'zdjęcie' in notes:
-                for word in 'lub odbicie na sd'.split():
+                for word in 'lub odbicie na sd otsa'.split():
                     if word in notes:
                         notes.remove(word)
                 login_keywords = ['konta', 'login', 'loginu']
                 for keyword in login_keywords:
-                    if keyword in notes:
+                    if keyword in notes and notes.index(keyword) < len(notes) - 1:
                         login = notes[notes.index(keyword) + 1]
     return login
 

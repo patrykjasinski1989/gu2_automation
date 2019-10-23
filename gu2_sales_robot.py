@@ -214,10 +214,12 @@ def offer_availability():
     rsw.close()
 
 
-def empty_rsw_inc():
+def empty_inc():
     """Close tickets with no content."""
-    all_rsw_inc = get_all_incidents('VC3_BSS_RSW')
-    for inc in all_rsw_inc:
+    all_inc = []
+    all_inc += get_all_incidents('VC3_BSS_RSW')
+    all_inc += get_all_incidents('VC3_BSS_OPTIPOS_MOBILE')
+    for inc in all_inc:
         if is_empty(inc):
             resolution = 'Puste zgłoszenie, prawdopodobnie duplikat.'
             close_incident(inc, resolution)
@@ -300,7 +302,7 @@ if __name__ == '__main__':
         release_resources()
         close_pending_rsw()
         offer_availability()
-        empty_rsw_inc()
+        empty_inc()
         ml_wzmuk_sti()
         ml_wzmuk_prod()
         optipos_tp_errors()
