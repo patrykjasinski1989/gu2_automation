@@ -27,9 +27,3 @@ def get_expiration_date(contract_data):
             expiration_date = line.split('<TD>')[1].split('</TD>')[0]
             break
     return expiration_date
-
-
-if __name__ == '__main__':
-    print(get_expiration_date(get_contract_data('573010799')))
-    print(get_expiration_date(get_contract_data('5730107999')))
-    exit(666)
