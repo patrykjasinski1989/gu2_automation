@@ -1,4 +1,5 @@
 FROM python:3.6
+MAINTAINER patrykjasinski1989
 
 WORKDIR /usr/src/app
 
@@ -11,6 +12,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install pyremedy
 RUN git clone https://github.com/patrykjasinski1989/pyremedy.git
 RUN pip install pyremedy/
+
+RUN rm -rf .git
 
 COPY config.py config.py
 
