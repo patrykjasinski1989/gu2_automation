@@ -10,7 +10,7 @@ Run the *install.sh* script on any Ubuntu 18.04 or 16.04 machine, preferably on 
 
 You can also use Dockerfile to build an image (keep the *config.py* file with your access data in the same directory):
 ```
-docker build . -t *YOUR_TAG*
+docker build . -t gu2_automation
 ```
 
 #### Running
@@ -24,7 +24,7 @@ python gu2_sales_robot.py
 
 To run the docker container:
 ```
-docker run *YOUR_TAG*
+docker run gu2_automation
 ```
 
 #### Other functionalities
