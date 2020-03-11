@@ -1,12 +1,9 @@
 #!/bin/bash
 # Tested on Ubuntu 18.04 and 16.04
 
-username=$$$
-password=$$$
-
 sudo apt-get update && sudo apt-get install -y git python3 python3-pip libaio1 unzip
 
-git clone https://${username}:${password}@github.com/patrykjasinski1989/gu2_automation.git
+git clone https://github.com/patrykjasinski1989/gu2_automation.git
 cd gu2_automation || exit 37
 mv config_sample.py config.py
 pip3 install --no-cache-dir -r requirements.txt
