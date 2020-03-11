@@ -4,8 +4,6 @@ A Python script that automates the resolution of repetitive 2nd support line tic
 
 #### Installing
 
-Change the values of *username* and *password* in the *install.sh* script to your github credentials.
-
 Run the *install.sh* script on any Ubuntu 18.04 or 16.04 machine, preferably on VM.
 
 You can also use Dockerfile to build an image (keep the *config.py* file with your access data in the same directory):
