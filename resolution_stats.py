@@ -3,8 +3,7 @@
 from remedy import get_resolved_incidents
 
 TOTAL = 'TOTAL'
-GROUPS = ['CDT', 'CV', 'ML', 'OPTIPOS_FIX', 'OPTIPOS_MOBILE', 'RSW', 'SIS']
-
+GROUPS = ['CDT', 'CV', 'ML', 'OPTIPOS_FIX', 'OPTIPOS_MOBILE', 'RSW', 'SIS', 'WMM']
 
 # GROUPS = ['CRM_MOBILE', 'ICC', 'MVNE', 'ISCO', 'ALLEINFO', 'CBS', 'CRM_FIX', 'MOPUP', 'OSIW', 'SOKX', 'REDA', 'TIGER',
 #           'BDAA', 'EAI_PTK', 'IMEIBL', 'JAZZ', 'NRA', 'OM_PTK', 'OV', 'PREAKTYWATOR', 'ODS', 'OM_TP', 'OV_TP', 'EAI_TP',
