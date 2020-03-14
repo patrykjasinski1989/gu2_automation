@@ -243,7 +243,7 @@ def reassign_incident(inc, group):
                 }
             )
 
-        print('{} przekazany na grupę {}'.format(inc['inc'], group))
+        print('{} {} przekazany na grupę {}'.format(str(datetime.now()).split('.')[0], inc['inc'], group))
 
     except ARSError as ars_ex:
         print('ERROR: {}'.format(ars_ex))
