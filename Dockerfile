@@ -29,4 +29,6 @@ RUN sh -c "echo /opt/oracle/instantclient_18_3 > /etc/ld.so.conf.d/oracle-instan
 
 RUN ldconfig
 
-CMD ["python", "./gu2_sales_robot.py"]
+ENTRYPOINT ["python"]
+CMD ["./gu2_sales_robot.py"]
+
