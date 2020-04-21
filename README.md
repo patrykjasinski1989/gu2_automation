@@ -8,7 +8,7 @@ Run the *install.sh* script on any Ubuntu 18.04 or 16.04 machine, preferably on 
 
 You can also use Dockerfile to build an image (keep the *config.py* file with your access data in the same directory):
 ```
-docker build . -t gu2_automation
+docker build --no-cache . -t gu2_automation
 ```
 
 #### Running
