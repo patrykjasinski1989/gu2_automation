@@ -32,3 +32,10 @@ python gu2_int_robot.py
 python pbi_report.py
 python resolution_stats.py
 ```
+
+For dockerized version: 
+```
+docker run gu2_automation gu2_int_robot.py
+docker run gu2_automation pbi_report.py
+docker run gu2_automation resolution_stats.py
+```
