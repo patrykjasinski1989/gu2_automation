@@ -39,9 +39,3 @@ def recertify_account(con, login, date, profile, inc):
                 profile = '{profile}'
                 WHERE LOWER(login) = LOWER('{login}') """.format(login=login, date=date, profile=profile, inc=inc)
     return execute_dml(con, stmt)
-
-
-if __name__ == '__main__':
-    ML_STI = ml_sti_connection()
-    print(ML_STI)
-    ML_STI.close()
