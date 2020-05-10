@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """This script generates statistics about incidents resolved by everyone in the last two weeks."""
+import argparse
 from remedy import get_resolved_incidents
 
 TOTAL = 'TOTAL'
-GROUPS = ['CDT', 'CV', 'ML', 'OPTIPOS_FIX', 'OPTIPOS_MOBILE', 'RSW', 'SIS', 'WMM']
-
-# GROUPS = ['CRM_MOBILE', 'ICC', 'MVNE', 'ISCO', 'ALLEINFO', 'CBS', 'CRM_FIX', 'MOPUP', 'OSIW', 'SOKX', 'REDA', 'TIGER',
-#           'BDAA', 'EAI_PTK', 'IMEIBL', 'JAZZ', 'NRA', 'OM_PTK', 'OV', 'PREAKTYWATOR', 'ODS', 'OM_TP', 'OV_TP', 'EAI_TP',
-#           'WMM', 'CV', 'CDT', 'ML', 'OPTIPOS_MOBILE', 'RSW', 'SIS', 'OPTIPOS_FIX', 'CCGW', 'EPGW', 'EXTRANET', 'FM',
-#           'IPK', 'KSRZ', 'LBS', 'LBS_PLI_CBD', 'MOBLGW', 'NOTYFIKATOR_PTK', 'NOTYFIKATOR_TP', 'QUICKDOC', 'RPK',
-#           'SMSEX', 'UCPGW', 'UCPSMS', 'BAM']
+GROUPS_VAS = ['CCGW', 'EPGW', 'EXTRANET', 'FM', 'IPK', 'KSRZ', 'LBS', 'LBS_PLI_CBD', 'MOBLGW', 'NOTYFIKATOR_PTK',
+              'NOTYFIKATOR_TP', 'QUICKDOC', 'RPK', 'SMSEX', 'UCPGW', 'UCPSMS']
+GROUPS_CRM = ['CRM_MOBILE', 'ICC', 'MVNE', 'ISCO', 'ALLEINFO', 'CBS', 'MOPUP', 'OSIW', 'SOKX', 'CRM_FIX', 'REDA',
+              'TIGER']
+GROUPS_INT = ['BDAA', 'EAI_PTK', 'IMEIBL', 'JAZZ', 'NRA', 'OM_PTK', 'OV', 'PREAKTYWATOR', 'ODS', 'OM_TP', 'OV_TP',
+              'EAI_TP']
+GROUPS_SALES = ['CV', 'CDT', 'ML', 'OPTIPOS_MOBILE', 'RSW', 'SIS', 'OPTIPOS_FIX', 'WMM']
+GROUPS_OF = ['BAM', 'OF']
+GROUPS_ALL = GROUPS_VAS + GROUPS_CRM + GROUPS_INT + GROUPS_SALES + GROUPS_OF
 
 
 def aggregate_stats(stats, aggr1, aggr2):
@@ -43,11 +46,17 @@ def print_stats(stats, details=False):
 
 def main():
     """Generate and print stats."""
-    remedy_groups = ['VC3_BSS_' + g for g in GROUPS]
+    parser = argparse.ArgumentParser(description='Show resolution stats for the chosen team.')
+    parser.add_argument('-t', '--team', required=True, choices=('vas', 'crm', 'int', 'sales', 'of', 'all'))
+    team_name = parser.parse_args().team
+    group_list_name = 'GROUPS_' + team_name.upper()
+    groups = globals()[group_list_name]
+
+    remedy_groups = ['VC3_BSS_' + g for g in groups]
     resolved_incidents = get_resolved_incidents(remedy_groups)
 
     stats, group_stats = {}, {}
-    for group in GROUPS:
+    for group in groups:
         group_stats[group] = {TOTAL: 0}
 
     for inc in resolved_incidents:
