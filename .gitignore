@@ -109,3 +109,4 @@ venv3/
 *config.py
 .idea/
 nohup.out
+*.bak
