@@ -1,5 +1,4 @@
-import requests
-import urllib3
+import paramiko
 from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
 
@@ -11,11 +10,15 @@ PASSWORD = config.OM_TP['password']
 
 
 def get_order_info(tel_id):
-    session = requests.session()
-    url = '{}/TpOrderManagementConsole/getOrderInfo.dsp?tel={}'.format(SERVER, tel_id)
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    response = session.get(url=url, auth=HTTPBasicAuth(USER, PASSWORD), timeout=3, verify=False)
-    return BeautifulSoup(response.content, 'html.parser')
+    url = '{}/BlsOmConsole/getOrderInfo.dsp?tel={}'.format(SERVER, tel_id)
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(config.EAI_IS['server'], username=config.EAI_IS['user'], password=config.EAI_IS['password'],
+                       allow_agent=False)
+    _, stdout, _ = ssh_client.exec_command('curl -k -u {}:{} {}'.format(USER, PASSWORD, url))
+    stdout = ''.join(stdout.readlines())
+    ssh_client.close()
+    return BeautifulSoup(stdout, 'html.parser')
 
 
 def get_order_data(order_info):
@@ -41,7 +44,7 @@ def get_process_errors(order_info):
 
 
 if __name__ == '__main__':
-    order_info_ = get_order_info('TEL000124646896')
+    order_info_ = get_order_info('TEL000128143169')
 
     order_data_ = get_order_data(order_info_)
     for key in order_data_:
@@ -49,5 +52,5 @@ if __name__ == '__main__':
 
     process_errors_ = get_process_errors(order_info_)
     print('\nErrors: ')
-    for process_error in process_errors_:
+    for process_error in sorted(process_errors_):
         print(process_error)

@@ -132,27 +132,49 @@ def get_tel_order_number(inc):
     return ''
 
 
-def get_logs_for_order(tel_order_id):
-    def delete_unnecessary_lines(logs_):
-        actual_logs = logs_
-        phrases_to_skip = ['Last login:', config.EAI_IS['user'], 'webmeth1', 'pipi.sh']
-        for phrase in phrases_to_skip:
-            actual_logs = [line.strip() for line in actual_logs if phrase not in line]
-        actual_logs = [line for line in actual_logs if line and line != '\'']
-        return actual_logs
+def delete_unnecessary_lines(logs_):
+    actual_logs = logs_
+    phrases_to_skip = ['Last login:', config.EAI_IS['user'], 'webmeth1', 'pipi.sh', 'grep']
+    for phrase in phrases_to_skip:
+        actual_logs = [line.strip() for line in actual_logs if phrase not in line]
+    actual_logs = [line for line in actual_logs if line and line != '\'']
+    return actual_logs
 
+
+def get_logs_for_order(tel_order_id):
     sudo_command = 'sudo su - webmeth1'
     pipi_command = 'cd stat && ./pipi.sh {}'.format(tel_order_id)
 
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(config.EAI_IS['server'], username=config.EAI_IS['user'], password=config.EAI_IS['password'])
+    ssh_client.connect(config.EAI_IS['server'], username=config.EAI_IS['user'], password=config.EAI_IS['password'],
+                       allow_agent=False)
 
     shell = ssh_client.invoke_shell()
     shell.send(sudo_command + '\n')
     shell.send(pipi_command + '\n')
-    time.sleep(5)
+    time.sleep(15)
     logs = str(shell.recv(50000)).split('\\r\\n')
 
     logs = delete_unnecessary_lines(logs)
     return logs
+
+
+def resubmit_goal(tel_order_number):
+    grep_command = """curl -skL -u {}:{} {}/BlsOmConsole/getOrderInfo.dsp?tel={} | 
+    grep -Eo "/invoke/tp.ordermanagement.console.pub/resubmitGoalAndClean\?pgoId=[0-9]+"\n"""
+    curl_command = """curl -skL -u {}:{} {} \n"""
+
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(config.EAI_IS['server'], username=config.EAI_IS['user'], password=config.EAI_IS['password'],
+                       allow_agent=False)
+    shell = ssh_client.invoke_shell()
+
+    shell.send(grep_command.format(config.OM_TP['user'], config.OM_TP['password'], config.OM_TP['server'],
+                                   tel_order_number))
+    time.sleep(5)
+    output = str(shell.recv(2000)).split('\\r\\n')
+    resubmit_link = config.OM_TP['server'] + delete_unnecessary_lines(output)[0]
+    shell.send(curl_command.format(config.OM_TP['user'], config.OM_TP['password'], resubmit_link))
+    time.sleep(5)
