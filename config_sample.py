@@ -58,3 +58,7 @@ OM_TP = {'server': 'https://126.185.9.192:5555',
 EAI_IS = {'server': '126.177.38.116',
           'user': '',
           'password': ''}
+
+PROVIK = {'server': '126.177.84.49:1521/PROVIK',
+          'user': '',
+          'password': ''}
