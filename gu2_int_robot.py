@@ -27,7 +27,7 @@ def handle_brm_errors():
                     sleep(30)
                 elif len(logs) == 1:
                     resubmit_goal(tel_order_number)
-                    print('{} Zamówienie {} ponowione w OM TP'.format(inc, tel_order_number), file=sys.stderr)
+                    print('{} Zamówienie {} ponowione w OM TP'.format(inc['inc'], tel_order_number), file=sys.stderr)
                 else:
                     process_errors = get_process_errors(get_order_info(tel_order_number))
                     error_id = ''
