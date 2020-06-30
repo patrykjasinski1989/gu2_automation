@@ -43,6 +43,13 @@ def get_process_errors(order_info):
     return process_errors
 
 
+def has_brm_process_error(process_errors):
+    for process_error in process_errors:
+        if process_error[9] == 'ABRM-00005':
+            return True
+    return False
+
+
 if __name__ == '__main__':
     order_info_ = get_order_info('TEL000128143169')
 
@@ -52,5 +59,5 @@ if __name__ == '__main__':
 
     process_errors_ = get_process_errors(order_info_)
     print('\nErrors: ')
-    for process_error in sorted(process_errors_):
-        print(process_error)
+    for pe in sorted(process_errors_):
+        print(pe)

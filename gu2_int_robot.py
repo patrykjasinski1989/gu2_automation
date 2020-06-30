@@ -7,18 +7,19 @@ from time import sleep
 
 from helper_functions import has_brm_error, get_tel_order_number, get_logs_for_order, resubmit_goal
 from ml_wzmuk_processing import get_users_data_from_xls
-from om_tp import get_order_info, get_process_errors, get_order_data
+from om_tp import get_order_info, get_process_errors, get_order_data, has_brm_process_error
 from remedy import get_all_incidents, get_work_info, has_exactly_one_entry, add_work_info, reassign_incident, \
-    get_incidents, close_incident
+    get_incidents, close_incident, is_work_info_empty
 
 
 def handle_brm_errors():
     incidents = get_all_incidents('VC3_BSS_OM_TP')
     for inc in incidents:
         work_info = get_work_info(inc)
-        if has_exactly_one_entry(work_info) and has_brm_error(work_info):
-            tel_order_number = get_tel_order_number(inc)
-            if tel_order_number:
+        tel_order_number = get_tel_order_number(inc)
+        if tel_order_number and is_work_info_empty(work_info):  # and has_brm_error(work_info):
+            process_errors = get_process_errors(get_order_info(tel_order_number))
+            if has_brm_process_error(process_errors):
                 logs = get_logs_for_order(tel_order_number)
                 logs_string = '\r\n'.join(logs)
                 if len(logs) == 2:
