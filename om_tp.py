@@ -45,6 +45,8 @@ def get_process_errors(order_info):
 
 def has_brm_process_error(process_errors):
     for process_error in process_errors:
+        if len(process_error) < 10:
+            continue
         if process_error[9] == 'ABRM-00005':
             return True
     return False
