@@ -23,3 +23,28 @@ def get_latest_order(con, tel_order_id):
     else:
         dict_row = None
     return dict_row
+
+
+def is_gbill_out_for_order(con, ord_id):
+    query = """select pgo_goal_name, pgo_state from om_process_goals 
+    where pgo_ord_id = '{}' and pgo_goal_name = 'GBILL'""".format(ord_id)
+    cur = con.cursor()
+    cur.execute(query)
+    cur.fetchall()
+    cur.close()
+    return cur.rowcount == 1
+
+
+def has_gpreprov(con, ord_id):
+    query = """select pgo_goal_name, pgo_state from om_process_goals 
+    where pgo_ord_id = '{}' and pgo_goal_name = 'GPREPROV'""".format(ord_id)
+    cur = con.cursor()
+    cur.execute(query)
+    cur.fetchall()
+    cur.close()
+    return cur.rowcount > 0
+
+
+def cancel_order(con, ord_id):
+    stmt = """update om_order set ord_state = 'CANCELLED' where ord_id = '{}'""".format(ord_id)
+    execute_dml(con, stmt)

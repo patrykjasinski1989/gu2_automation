@@ -1,40 +1,88 @@
 #!/usr/bin/env python3
 import os
+import re
 import sys
-from datetime import datetime
 from time import sleep
 
-from db.provik import get_latest_order, provik_connection
-from helper_functions import has_brm_error, get_tel_order_number, get_logs_for_order, resubmit_goal
-from ml_wzmuk_processing import get_users_data_from_xls
+from db.provik import get_latest_order, provik_connection, is_gbill_out_for_order, has_gpreprov, cancel_order
+from helper_functions import has_brm_error, get_tel_order_number, get_logs_for_order, resubmit_goal, \
+    fine_flag_value_replace, update_cf_service
 from om_tp import get_order_info, get_process_errors, get_order_data, has_brm_process_error
+from om_tp_wzmuk_processing import get_users_data_from_xls, disable_user
 from remedy import get_all_incidents, get_work_info, has_exactly_one_entry, add_work_info, reassign_incident, \
-    get_incidents, close_incident, is_work_info_empty, get_pending_incidents, assign_incident
+    get_incidents, close_incident, is_work_info_empty, get_pending_incidents, assign_incident, update_summary
 
 
 def handle_brm_errors():
     incidents = get_all_incidents('VC3_BSS_OM_TP')
+    provik = provik_connection()
+
     for inc in incidents:
         work_info = get_work_info(inc)
         tel_order_number = get_tel_order_number(inc)
-        if tel_order_number and (is_work_info_empty(work_info) or has_exactly_one_entry(work_info)):
-            process_errors = get_process_errors(get_order_info(tel_order_number))
+        order_info = get_order_info(tel_order_number)
+        order_data = get_order_data(order_info)
+        if 'OM zamowienie (ORD_ID)' in order_data:
+            ord_id = order_data['OM zamowienie (ORD_ID)']
+
+        if 'BRM3' in inc['summary']:
+            if is_gbill_out_for_order(provik, ord_id):
+                update_summary(inc, 'CRM')
+                add_work_info(inc, 'VC_OM_TP', 'Poprawione.')
+                reassign_incident(inc, 'VC3_BSS_CRM_FIX')
+
+        elif 'BRM2' in inc['summary']:
+            if is_gbill_out_for_order(provik, ord_id):
+                resolution = 'Zamówienie {} przekazane do realizacji.'.format(tel_order_number)
+                close_incident(inc, resolution)
+
+        elif 'BRM' in inc['summary'] or 'PK' in inc['summary']:
+            for entry in work_info:
+                notes = '\r\n'.join(entry['notes']).lower()
+                summary = entry['summary'].lower()
+                if 'crm' in summary and 'bez kary' in notes:
+                    if ord_id:
+                        fine_flag_value_replace(ord_id, inc)
+                        resubmit_successful = resubmit_goal(tel_order_number)
+                        if resubmit_successful:
+                            update_summary(inc, 'BRM2')
+                elif 'crm' in summary and 'pro000' in notes:
+                    promotion_regex = re.compile(r'pro[0-9]{14}')
+                    promotion_ids = promotion_regex.findall(notes)
+                    promotion_id = None
+                    promotion_already_deleted = False
+                    if len(promotion_ids) == 1:
+                        promotion_id = promotion_ids[0].upper()
+                    if promotion_id and not promotion_already_deleted:
+                        update_cf_service(ord_id, promotion_id, inc)
+                        promotion_already_deleted = True
+                        resubmit_successful = resubmit_goal(tel_order_number)
+                        if resubmit_successful:
+                            update_summary(inc, 'BRM3')
+
+        elif tel_order_number and (is_work_info_empty(work_info) or has_exactly_one_entry(work_info)):
+            process_errors = get_process_errors(order_info)
             if has_brm_process_error(process_errors) or has_brm_error(work_info):
                 logs = get_logs_for_order(tel_order_number)
                 logs_string = '\r\n'.join(logs)
                 if len(logs) == 2:
+                    update_summary(inc, 'BRM')
                     add_work_info(inc, 'VC_OM', logs_string)
                     reassign_incident(inc, 'APLIKACJE_OBRM_DOSTAWCA')
                     sleep(30)
                 elif len(logs) == 1:
-                    resubmit_goal(tel_order_number)
-                    print('{} Zamówienie {} ponowione w OM TP'.format(inc['inc'], tel_order_number), file=sys.stderr)
+                    resubmit_successful = resubmit_goal(tel_order_number)
+                    if resubmit_successful:
+                        print('{} Zamówienie {} ponowione w OM TP'.format(inc['inc'], tel_order_number),
+                              file=sys.stderr)
                 else:
                     process_errors = get_process_errors(get_order_info(tel_order_number))
                     error_id = ''
                     if process_errors and process_errors[0]:
                         error_id = process_errors[0][0]
                     print('{} {} {} {}'.format(inc['inc'], error_id, tel_order_number, logs_string), file=sys.stderr)
+
+    provik.close()
 
 
 def close_pending_om_tp():
@@ -54,16 +102,15 @@ def close_pending_om_tp():
         if resolution:
             assign_incident(inc)
             close_incident(inc, resolution)
-            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
     provik.close()
 
 
 def om_tp_wzmuk():
     incidents = get_incidents(
         'VC3_BSS_OM_TP',
-        '',
-        '',
-        ''  # TODO uzupelnic nazwy kategorii
+        '(185) E-WZMUK-konto w SI Nowe/Modyfikacja/Likwidacja',
+        'O30 OMTP',
+        '40h'
     )
     for inc in incidents:
         work_info = get_work_info(inc)
@@ -72,19 +119,40 @@ def om_tp_wzmuk():
         xls_file = open(filename, 'wb')
         xls_file.write(contents)
         xls_file.close()
-        users = get_users_data_from_xls(filename)  # TODO mozliwe ze bedzie potrzebna lekka modyfikacja tej funkcji
+        users = get_users_data_from_xls(filename)
         os.remove(filename)
 
-        resolution = ''
         for user in users:
             if user['typ_wniosku'] == 'Nowe konto':
-                resolution = None  # TODO napisac funkcje do zakladania kont (skrypt na 126.185.9.192)
+                pass
+            elif user['typ_wniosku'] == 'Likwidacja konta':
+                disable_user(user['login_ad'])
+                close_incident(inc, 'Konto wyłączone.')
 
-        if resolution:
-            close_incident(inc, resolution.strip())
-            print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
+
+def cancel_om_orders():
+    incidents = get_all_incidents('VC3_BSS_OM_TP')
+    provik = provik_connection()
+    for inc in incidents:
+        work_info = get_work_info(inc)
+        tel_order_number = get_tel_order_number(inc)
+        order_info = get_order_info(tel_order_number)
+        order_data = get_order_data(order_info)
+        if 'OM zamowienie (ORD_ID)' in order_data:
+            ord_id = order_data['OM zamowienie (ORD_ID)']
+
+        for entry in work_info:
+            notes = '\r\n'.join(entry['notes']).lower()
+            summary = entry['summary'].lower()
+            if 'crm' in summary and not has_gpreprov(provik, ord_id) and \
+                    ('anulowanie z bazy' in notes or 'do anulowania z bazy' in notes):
+                cancel_order(provik, ord_id)
+                close_incident(inc, 'Zamówienie {} anulowane.'.format(tel_order_number))
+    provik.close()
 
 
 if __name__ == '__main__':
-    close_pending_om_tp()
+    cancel_om_orders()
+    om_tp_wzmuk()
     handle_brm_errors()
+    close_pending_om_tp()
