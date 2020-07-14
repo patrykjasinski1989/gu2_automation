@@ -1,9 +1,8 @@
-#!/usr/env/bin python3
+#!/usr/bin/env python3
 """This is the script used to close the tickets. GU2 Sales Incidents for OPL to be exact.
 Should be broken into smaller parts..."""
 import config
 from db.optipos_ptk import optipos_sti_connection, link_login_with_ifs
-from ml_wzmuk_processing import ml_wzmuk_sti, ml_wzmuk_prod
 
 __author__ = "Patryk Jasiński <pjasinski@bluesoft.com>"
 
@@ -17,6 +16,7 @@ import paramiko
 from db.otsa import otsa_connection, unlock_account
 from db.rsw import rsw_connection, get_latest_order, make_offer_available, get_offer_id_by_name
 from helper_functions import process_sims, find_login, extract_data_from_rsw_inc
+from ml_wzmuk_processing import ml_wzmuk_sti, ml_wzmuk_prod
 from otsa_processing import process_msisdns
 from remedy import get_incidents, close_incident, is_empty, \
     get_pending_incidents, assign_incident, get_all_incidents, get_work_info, has_exactly_one_entry, add_work_info, \
