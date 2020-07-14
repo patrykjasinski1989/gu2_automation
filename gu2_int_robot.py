@@ -40,7 +40,8 @@ def handle_brm_errors():
             for entry in work_info:
                 notes = '\r\n'.join(entry['notes']).lower()
                 summary = entry['summary'].lower()
-                if 'crm' in summary and 'bez kary' in notes:
+
+                if 'crm' in summary and ('bez kary' in notes or 'bez naliczania kary' in notes):
                     if ord_id:
                         fine_flag_value_replace(ord_id, inc)
                         resubmit_successful = resubmit_goal(tel_order_number)
@@ -70,7 +71,7 @@ def handle_brm_errors():
                     add_work_info(inc, 'VC_OM', logs_string)
                     reassign_incident(inc, 'APLIKACJE_OBRM_DOSTAWCA')
                     sleep(30)
-                elif len(logs) == 1:
+                elif len(logs) == 1 and not is_gbill_out_for_order(provik, ord_id):
                     resubmit_successful = resubmit_goal(tel_order_number)
                     if resubmit_successful:
                         print('{} Zamówienie {} ponowione w OM TP'.format(inc['inc'], tel_order_number),
@@ -144,8 +145,9 @@ def cancel_om_orders():
         for entry in work_info:
             notes = '\r\n'.join(entry['notes']).lower()
             summary = entry['summary'].lower()
-            if 'crm' in summary and not has_gpreprov(provik, ord_id) and \
-                    ('anulowanie z bazy' in notes or 'do anulowania z bazy' in notes):
+            if 'crm' in summary and \
+                    ('anulowanie z bazy' in notes or 'do anulowania z bazy' in notes) \
+                    and not has_gpreprov(provik, ord_id):
                 cancel_order(provik, ord_id)
                 close_incident(inc, 'Zamówienie {} anulowane.'.format(tel_order_number))
     provik.close()
