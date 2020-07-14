@@ -143,14 +143,9 @@ def delete_unnecessary_lines(logs_):
 
 def get_logs_for_order(tel_order_id):
     sudo_command = 'sudo su - webmeth1'
-    pipi_command = 'cd stat && ./pipi.sh {}'.format(tel_order_id)
+    pipi_command = 'cd stat && ./pipi.sh {} 2>/dev/null'.format(tel_order_id)
 
-    ssh_client = paramiko.SSHClient()
-    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(config.EAI_IS['server'], username=config.EAI_IS['user'], password=config.EAI_IS['password'],
-                       allow_agent=False)
-
-    shell = ssh_client.invoke_shell()
+    shell = get_ssh_connection(*config.EAI_IS.values())
     shell.send(sudo_command + '\n')
     shell.send(pipi_command + '\n')
     time.sleep(15)
@@ -165,16 +160,43 @@ def resubmit_goal(tel_order_number):
     grep -Eo "/invoke/tp.ordermanagement.console.pub/resubmitGoalAndClean\?pgoId=[0-9]+"\n"""
     curl_command = """curl -skL -u {}:{} {} \n"""
 
-    ssh_client = paramiko.SSHClient()
-    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(config.EAI_IS['server'], username=config.EAI_IS['user'], password=config.EAI_IS['password'],
-                       allow_agent=False)
-    shell = ssh_client.invoke_shell()
-
+    shell = get_ssh_connection(*config.EAI_IS.values())
     shell.send(grep_command.format(config.OM_TP['user'], config.OM_TP['password'], config.OM_TP['server'],
                                    tel_order_number))
     time.sleep(5)
     output = str(shell.recv(2000)).split('\\r\\n')
-    resubmit_link = config.OM_TP['server'] + delete_unnecessary_lines(output)[0]
+    trimmed_output = delete_unnecessary_lines(output)
+    if len(trimmed_output) == 0:
+        return False
+    resubmit_link = config.OM_TP['server'] + trimmed_output[0]
     shell.send(curl_command.format(config.OM_TP['user'], config.OM_TP['password'], resubmit_link))
     time.sleep(5)
+    return True
+
+
+def fine_flag_value_replace(ord_id, inc):
+    service_url = config.OM_TP['server'] + '/invoke/kwt.pub/fineFlagValueReplaceComment?ordId={}&comments={}'. \
+        format(ord_id, inc['inc'])
+    curl_command = """curl -kL -u {}:{} {}""".format(config.OM_TP['user'], config.OM_TP['password'], service_url)
+
+    shell = get_ssh_connection(*config.EAI_IS.values())
+    shell.send(curl_command + '\r\n')
+    time.sleep(5)
+
+
+def update_cf_service(ord_id, pro_id, inc):
+    service_url = config.OM_TP['server'] + \
+                  '/invoke/tp.om.maintenancetools.util.pbi.pub/updateCfService?ordId={}&cfServiceInstanceId={}&comments={}'.\
+                  format(ord_id, pro_id, inc['inc'])
+    curl_command = """curl -kL -u {}:{} {}""".format(config.OM_TP['user'], config.OM_TP['password'], service_url)
+
+    shell = get_ssh_connection(*config.EAI_IS.values())
+    shell.send(curl_command + '\r\n')
+    time.sleep(5)
+
+
+def get_ssh_connection(server, username, password):
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(server, username=username, password=password, allow_agent=False)
+    return ssh_client.invoke_shell()

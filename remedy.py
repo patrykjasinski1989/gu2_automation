@@ -67,7 +67,10 @@ def get_all_incidents(group):
             schema=SCHEMA_INC,
             qualifier=""" 'Status' = "Assigned" 
                                  AND 'Assigned Group*+' = "%s"  
-                                 AND 'Assignee' = NULL 
+                                 AND ( 'Assignee' = NULL  
+                                 OR 'Assignee' = "PATRYK JASIŃSKI"
+                                 OR 'Assignee' = "JAN NALEŻYTY"
+                                 )
                                  """ % group,
             fields=['Incident Number', 'Detailed Decription', 'Description', 'Assignee']
         )
@@ -118,6 +121,8 @@ def close_incident(inc, resolution):
                 'Resolution': resolution
             }
         )
+
+        print('{} {}: {}'.format(str(datetime.now()).split('.')[0], inc['inc'], resolution.strip()))
 
     except ARSError as ars_ex:
         print('ERROR: {}'.format(ars_ex))
@@ -193,6 +198,7 @@ def reassign_incident(inc, group):
         'Servicedesk - KONTA': 'SGP000000040569',
         'APLIKACJE_OBRM_DOSTAWCA': 'SGP000000016581',
         'VC3_BSS_OV_TP': 'SGP000000051165',
+        'VC3_BSS_CRM_FIX': 'SGP000000050968',
     }
 
     try:
@@ -231,6 +237,17 @@ def reassign_incident(inc, group):
                     'Assigned Group ID': group_ids[group_name],
                     'Assigned Support Company': 'TELEKOMUNIKACJA POLSKA S.A.',
                     'Assigned Support Organization': 'Departament Rozwoju i Utrzymania Systemów IT',
+                }
+            )
+        elif group_name == 'VC3_BSS_CRM_FIX':
+            ars.update(
+                schema=SCHEMA_INC,
+                entry_id=inc['id'],
+                entry_values={
+                    'Assigned Group': group_name,
+                    'Assigned Group ID': group_ids[group_name],
+                    'Assigned Support Company': 'TELEKOMUNIKACJA POLSKA S.A.',
+                    'Assigned Support Organization': 'IT (VENDOR)',
                 }
             )
         else:
