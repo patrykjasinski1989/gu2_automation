@@ -4,7 +4,8 @@ import re
 import sys
 from time import sleep
 
-from db.provik import get_latest_order, provik_connection, is_gbill_out_for_order, has_gpreprov, cancel_order
+from db.provik import get_latest_order, provik_connection, is_gbill_out_for_order, has_gpreprov, cancel_order, \
+    has_pbi184471_error
 from helper_functions import has_brm_error, get_tel_order_number, get_logs_for_order, resubmit_goal, \
     fine_flag_value_replace, update_cf_service
 from om_tp import get_order_info, get_process_errors, get_order_data, has_brm_process_error
@@ -28,7 +29,7 @@ def handle_brm_errors():
         if 'BRM3' in inc['summary']:
             if is_gbill_out_for_order(provik, ord_id):
                 update_summary(inc, 'CRM')
-                add_work_info(inc, 'VC_OM_TP', 'Poprawione.')
+                add_work_info(inc, 'OM_TP', 'Poprawione.')
                 reassign_incident(inc, 'VC3_BSS_CRM_FIX')
 
         elif 'BRM2' in inc['summary']:
@@ -69,7 +70,7 @@ def handle_brm_errors():
                 logs_string = '\r\n'.join(logs)
                 if len(logs) == 2:
                     update_summary(inc, 'BRM')
-                    add_work_info(inc, 'VC_OM', logs_string)
+                    add_work_info(inc, 'OM_TP', logs_string)
                     reassign_incident(inc, 'APLIKACJE_OBRM_DOSTAWCA')
                     sleep(30)
                 elif len(logs) == 1 and not is_gbill_out_for_order(provik, ord_id):
@@ -154,8 +155,23 @@ def cancel_om_orders():
     provik.close()
 
 
+def pbi184471():
+    wi_notes = 'Błędna sekcja documents, brak określenia pola TYPE dla jednego z dokumentów. PBI000000184471'
+    incidents = get_incidents('VC3_BSS_OM_TP', '(001) CRM Fix')
+    provik = provik_connection()
+    for inc in incidents:
+        work_info = get_work_info(inc)
+        tel_order_number = get_tel_order_number(inc)
+        if (is_work_info_empty(work_info) or has_exactly_one_entry(work_info))\
+                and has_pbi184471_error(provik, tel_order_number):
+            add_work_info(inc, 'OM_TP', wi_notes)
+            reassign_incident(inc, 'APLIKACJE_DEVOPS_HYBRIS')
+    provik.close()
+
+
 if __name__ == '__main__':
     cancel_om_orders()
     om_tp_wzmuk()
     handle_brm_errors()
     close_pending_om_tp()
+    pbi184471()

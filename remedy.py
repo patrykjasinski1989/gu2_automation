@@ -15,7 +15,7 @@ SCHEMA_WI = 'HPD:WorkLog'
 SCHEMA_ATTACHMENTS = 'HPD:Attachments'
 
 
-def get_incidents(group, tier1, tier2, tier3):
+def get_incidents(group, tier1, tier2=None, tier3=None):
     """Return assigned incidents for given group and category."""
     try:
         ars = ARS(
@@ -23,14 +23,22 @@ def get_incidents(group, tier1, tier2, tier3):
             user=USER, password=PASSWORD
         )
 
+        if tier2 and tier3:
+            qualifier = """ 'Status' = "Assigned"
+                         AND 'Assigned Group*+' = "%s" 
+                         AND 'Operational Categorization Tier 1' = "%s" 
+                         AND 'Operational Categorization Tier 2' = "%s" 
+                         AND 'Operational Categorization Tier 3' = "%s" 
+                         """ % (group, tier1, tier2, tier3),
+        else:
+            qualifier = """ 'Status' = "Assigned"
+                         AND 'Assigned Group*+' = "%s" 
+                         AND 'Operational Categorization Tier 1' = "%s"
+                         """ % (group, tier1)
+
         entries = ars.query(
             schema=SCHEMA_INC,
-            qualifier=""" 'Status' = "Assigned"
-                                 AND 'Assigned Group*+' = "%s" 
-                                 AND 'Operational Categorization Tier 1' = "%s" 
-                                 AND 'Operational Categorization Tier 2' = "%s" 
-                                 AND 'Operational Categorization Tier 3' = "%s" 
-                                 """ % (group, tier1, tier2, tier3),
+            qualifier=qualifier,
             fields=['Incident Number', 'Detailed Decription', 'Description']
         )
 
@@ -199,6 +207,7 @@ def reassign_incident(inc, group):
         'APLIKACJE_OBRM_DOSTAWCA': 'SGP000000016581',
         'VC3_BSS_OV_TP': 'SGP000000051165',
         'VC3_BSS_CRM_FIX': 'SGP000000050968',
+        'APLIKACJE_DEVOPS_HYBRIS': 'SGP000000044666',
     }
 
     try:
@@ -248,6 +257,17 @@ def reassign_incident(inc, group):
                     'Assigned Group ID': group_ids[group_name],
                     'Assigned Support Company': 'TELEKOMUNIKACJA POLSKA S.A.',
                     'Assigned Support Organization': 'IT (VENDOR)',
+                }
+            )
+        elif group_name == 'APLIKACJE_DEVOPS_HYBRIS':
+            ars.update(
+                schema=SCHEMA_INC,
+                entry_id=inc['id'],
+                entry_values={
+                    'Assigned Group': group_name,
+                    'Assigned Group ID': group_ids[group_name],
+                    'Assigned Support Company': 'TELEKOMUNIKACJA POLSKA S.A.',
+                    'Assigned Support Organization': 'IT (HURT)',
                 }
             )
         else:
