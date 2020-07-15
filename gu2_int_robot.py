@@ -157,7 +157,9 @@ def cancel_om_orders():
 
 def pbi184471():
     wi_notes = 'Błędna sekcja documents, brak określenia pola TYPE dla jednego z dokumentów. PBI000000184471'
-    incidents = get_incidents('VC3_BSS_OM_TP', '(001) CRM Fix')
+    incidents = []
+    incidents += get_incidents('VC3_BSS_OM_TP', '(001) CRM Fix')
+    incidents += get_incidents('VC3_BSS_OM_TP', '(039) Obieg zleceń CRM-KSP')
     provik = provik_connection()
     for inc in incidents:
         work_info = get_work_info(inc)

@@ -29,7 +29,7 @@ def get_incidents(group, tier1, tier2=None, tier3=None):
                          AND 'Operational Categorization Tier 1' = "%s" 
                          AND 'Operational Categorization Tier 2' = "%s" 
                          AND 'Operational Categorization Tier 3' = "%s" 
-                         """ % (group, tier1, tier2, tier3),
+                         """ % (group, tier1, tier2, tier3)
         else:
             qualifier = """ 'Status' = "Assigned"
                          AND 'Assigned Group*+' = "%s" 
