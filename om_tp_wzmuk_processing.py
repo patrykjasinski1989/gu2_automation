@@ -5,7 +5,7 @@ from datetime import datetime
 from xlrd import open_workbook, cellname, xldate_as_tuple
 
 import config
-from helper_functions import get_ssh_connection
+from helper_functions import get_ssh_connection, delete_unnecessary_lines
 
 
 def get_users_data_from_xls(filename):
@@ -40,3 +40,17 @@ def disable_user(user):
     shell.send('cd kk02/wzmuki' + '\r\n')
     shell.send(f'./wzmukiDIS_solo.sh {user}' + '\r\n')
     time.sleep(1)
+
+
+def new_ro_user(user):
+    """Run shell script to create a new read-only user account."""
+    shell = get_ssh_connection(*config.EAI_IS.values())
+    shell.send('sudo su - webmeth1' + '\r\n')
+    shell.send('ssh 126.185.9.192' + '\r\n')
+    shell.send('cd kk02/wzmuki' + '\r\n')
+    shell.send(f'./wzmukiRO_solo.sh {user}' + '\r\n')
+    time.sleep(1)
+    output = str(shell.recv(2000)).split('\\r\\n')
+    output = delete_unnecessary_lines(output)
+    password = output[-1].split()[-1]
+    return password

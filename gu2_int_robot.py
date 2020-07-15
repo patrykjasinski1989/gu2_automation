@@ -9,7 +9,7 @@ from db.provik import get_latest_order, provik_connection, is_gbill_out_for_orde
 from helper_functions import has_brm_error, get_tel_order_number, get_logs_for_order, resubmit_goal, \
     fine_flag_value_replace, update_cf_service
 from om_tp import get_order_info, get_process_errors, get_order_data, has_brm_process_error
-from om_tp_wzmuk_processing import get_users_data_from_xls, disable_user
+from om_tp_wzmuk_processing import get_users_data_from_xls, disable_user, new_ro_user
 from remedy import get_all_incidents, get_work_info, has_exactly_one_entry, add_work_info, reassign_incident, \
     get_incidents, close_incident, is_work_info_empty, get_pending_incidents, assign_incident, update_summary
 
@@ -127,7 +127,11 @@ def om_tp_wzmuk():
 
         for user in users:
             if user['typ_wniosku'] == 'Nowe konto':
-                pass
+                if user['profil'] == 'konsola zamówień OM (odczyt)':
+                    password = new_ro_user(user['login_ad'])
+                    close_incident(inc, f'Konto założone, hasło to: {password}')
+                else:
+                    pass
             elif user['typ_wniosku'] == 'Likwidacja konta':
                 disable_user(user['login_ad'])
                 close_incident(inc, 'Konto wyłączone.')
