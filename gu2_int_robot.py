@@ -41,7 +41,8 @@ def handle_brm_errors():
                 notes = '\r\n'.join(entry['notes']).lower()
                 summary = entry['summary'].lower()
 
-                if 'crm' in summary and ('bez kary' in notes or 'bez naliczania kary' in notes):
+                if 'crm' in summary and \
+                        ('bez kary' in notes or 'bez naliczania kary' in notes or 'bez naliczenia kary' in notes):
                     if ord_id:
                         fine_flag_value_replace(ord_id, inc)
                         resubmit_successful = resubmit_goal(tel_order_number)
