@@ -27,7 +27,7 @@ def get_latest_order(con, tel_order_id):
 
 def is_gbill_out_for_order(con, ord_id):
     query = """select pgo_goal_name, pgo_state from om_process_goals 
-    where pgo_ord_id = '{}' and pgo_goal_name = 'GBILL'""".format(ord_id)
+    where pgo_ord_id = '{}' and pgo_goal_name = 'GBILL' and pgo_state = 'OUT'""".format(ord_id)
     cur = con.cursor()
     cur.execute(query)
     cur.fetchall()

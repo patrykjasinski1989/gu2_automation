@@ -175,7 +175,7 @@ def resubmit_goal(tel_order_number):
 
 
 def fine_flag_value_replace(ord_id, inc):
-    service_url = config.OM_TP['server'] + '/invoke/kwt.pub/fineFlagValueReplaceComment?ordId={}&comments={}'. \
+    service_url = config.OM_TP['server'] + "'/invoke/kwt.pub/fineFlagValueReplaceComment?ordId={}&comments={}'". \
         format(ord_id, inc['inc'])
     curl_command = """curl -kL -u {}:{} {}""".format(config.OM_TP['user'], config.OM_TP['password'], service_url)
 
@@ -185,9 +185,21 @@ def fine_flag_value_replace(ord_id, inc):
 
 
 def update_cf_service(ord_id, pro_id, inc):
-    service_url = config.OM_TP['server'] + \
-                  '/invoke/tp.om.maintenancetools.util.pbi.pub/updateCfService?ordId={}&cfServiceInstanceId={}&comments={}'.\
+    service_url = "'" + config.OM_TP['server'] + \
+                  "/invoke/tp.om.maintenancetools.util.pbi.pub/updateCfService?ordId={}&cfServiceInstanceId={" \
+                  "}&comments={}'".\
                   format(ord_id, pro_id, inc['inc'])
+    curl_command = """curl -kL -u {}:{} {}""".format(config.OM_TP['user'], config.OM_TP['password'], service_url)
+
+    shell = get_ssh_connection(*config.EAI_IS.values())
+    shell.send(curl_command + '\r\n')
+    time.sleep(5)
+
+
+def delete_cf_service(ord_id, ins_id, inc):
+    service_url = "'" + config.OM_TP['server'] + \
+                  "/invoke/pbiUtils.pbi27521.pub/deleteCfService?ordId={}&cfServiceInstanceId={}&comments={}'". \
+                      format(ord_id, ins_id, inc['inc'])
     curl_command = """curl -kL -u {}:{} {}""".format(config.OM_TP['user'], config.OM_TP['password'], service_url)
 
     shell = get_ssh_connection(*config.EAI_IS.values())
@@ -200,3 +212,14 @@ def get_ssh_connection(server, username, password):
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh_client.connect(server, username=username, password=password, allow_agent=False)
     return ssh_client.invoke_shell()
+
+
+def get_return_flag(work_info):
+    return_flag = False
+    for entry in work_info:
+        notes = '\r\n'.join(entry['notes']).lower()
+        summary = entry['summary'].lower()
+        if 'crm' in summary and 'zwrot inc' in notes:
+            return_flag = True
+            break
+    return return_flag

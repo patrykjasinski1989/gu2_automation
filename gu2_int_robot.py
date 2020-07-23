@@ -7,7 +7,7 @@ from time import sleep
 from db.provik import get_latest_order, provik_connection, is_gbill_out_for_order, has_gpreprov, cancel_order, \
     has_pbi184471_error
 from helper_functions import has_brm_error, get_tel_order_number, get_logs_for_order, resubmit_goal, \
-    fine_flag_value_replace, update_cf_service
+    fine_flag_value_replace, update_cf_service, delete_cf_service, get_return_flag
 from om_tp import get_order_info, get_process_errors, get_order_data, has_brm_process_error
 from om_tp_wzmuk_processing import get_users_data_from_xls, disable_user, new_ro_user
 from remedy import get_all_incidents, get_work_info, has_exactly_one_entry, add_work_info, reassign_incident, \
@@ -38,9 +38,14 @@ def handle_brm_errors():
                 close_incident(inc, resolution)
 
         elif 'BRM' in inc['summary'] or 'PK' in inc['summary']:
-            for entry in work_info:
+            promotion_regex = re.compile(r'pro[0-9]{14}')
+            promotion_ids = []
+            return_flag = get_return_flag(work_info)
+
+            for entry in work_info[::-1]:
                 notes = '\r\n'.join(entry['notes']).lower()
                 summary = entry['summary'].lower()
+                promotion_ids += promotion_regex.findall(notes)
 
                 if 'crm' in summary and \
                         ('bez kary' in notes or 'bez naliczania kary' in notes or 'bez naliczenia kary' in notes):
@@ -48,20 +53,32 @@ def handle_brm_errors():
                         fine_flag_value_replace(ord_id, inc)
                         resubmit_successful = resubmit_goal(tel_order_number)
                         if resubmit_successful:
-                            update_summary(inc, 'BRM2')
-                elif 'crm' in summary and 'pro000' in notes:
-                    promotion_regex = re.compile(r'pro[0-9]{14}')
-                    promotion_ids = promotion_regex.findall(notes)
+                            update_summary(inc, 'BRM3') if return_flag else update_summary(inc, 'BRM2')
+
+                elif 'crm' in summary and ('promo' in notes or 'pro000' in notes) and \
+                        ('bez' in notes or 'usunięcie' in notes or 'do usunięcia' in notes):
                     promotion_id = None
-                    promotion_already_deleted = False
+                    promotion_ids = list(set(promotion_ids))
                     if len(promotion_ids) == 1:
                         promotion_id = promotion_ids[0].upper()
-                    if promotion_id and not promotion_already_deleted:
+                    if promotion_id:
                         update_cf_service(ord_id, promotion_id, inc)
-                        promotion_already_deleted = True
                         resubmit_successful = resubmit_goal(tel_order_number)
                         if resubmit_successful:
-                            update_summary(inc, 'BRM3')
+                            update_summary(inc, 'BRM3') if return_flag else update_summary(inc, 'BRM2')
+
+                elif 'crm' in summary and 'ins000' in notes and \
+                        ('bez' in notes or 'usunięcie' in notes or 'do usunięcia' in notes):
+                    ins_regex = re.compile(r'ins[0-9]{14}')
+                    ins_ids = ins_regex.findall(notes)
+                    ins_id = None
+                    if len(ins_ids) == 1:
+                        ins_id = ins_ids[0].upper()
+                    if ins_id:
+                        delete_cf_service(ord_id, ins_id, inc)
+                        resubmit_successful = resubmit_goal(tel_order_number)
+                        if resubmit_successful:
+                            update_summary(inc, 'BRM3') if return_flag else update_summary(inc, 'BRM2')
 
         elif tel_order_number and (is_work_info_empty(work_info) or has_exactly_one_entry(work_info)):
             process_errors = get_process_errors(order_info)
@@ -148,6 +165,8 @@ def cancel_om_orders():
         if 'OM zamowienie (ORD_ID)' in order_data:
             ord_id = order_data['OM zamowienie (ORD_ID)']
 
+        return_flag = get_return_flag(work_info)
+
         for entry in work_info:
             notes = '\r\n'.join(entry['notes']).lower()
             summary = entry['summary'].lower()
@@ -155,7 +174,11 @@ def cancel_om_orders():
                     ('anulowanie z bazy' in notes or 'do anulowania z bazy' in notes) \
                     and not has_gpreprov(provik, ord_id):
                 cancel_order(provik, ord_id)
-                close_incident(inc, 'Zamówienie {} anulowane.'.format(tel_order_number))
+                if return_flag:
+                    add_work_info(inc, 'OM_TP', 'Zamówienie anulowane.')
+                    reassign_incident(inc, 'VC3_BSS_CRM_FIX')
+                else:
+                    close_incident(inc, 'Zamówienie {} anulowane.'.format(tel_order_number))
     provik.close()
 
 
