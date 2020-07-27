@@ -143,6 +143,8 @@ def om_tp_wzmuk():
         os.remove(filename)
 
         for user in users:
+            if not user['login_ad']:
+                continue
             if user['typ_wniosku'] == 'Nowe konto':
                 if user['profil'] == 'konsola zamówień OM (odczyt)':
                     password = new_ro_user(user['login_ad'])
