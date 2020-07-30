@@ -49,7 +49,7 @@ def new_ro_user(user):
     shell.send('ssh 126.185.9.192' + '\r\n')
     shell.send('cd kk02/wzmuki' + '\r\n')
     shell.send(f'./wzmukiRO_solo.sh {user}' + '\r\n')
-    time.sleep(1)
+    time.sleep(5)
     output = str(shell.recv(2000)).split('\\r\\n')
     output = delete_unnecessary_lines(output)
     password = output[-1].split()[-1]
