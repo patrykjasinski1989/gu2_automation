@@ -134,7 +134,7 @@ def get_tel_order_number(inc):
 
 def delete_unnecessary_lines(logs_):
     actual_logs = logs_
-    phrases_to_skip = ['Last login:', config.EAI_IS['user'], 'webmeth1', 'pipi.sh', 'grep']
+    phrases_to_skip = ['Last login:', config.EAI_IS['user'], 'webmeth1', 'pipi.sh', 'grep', 'your password will expire']
     for phrase in phrases_to_skip:
         actual_logs = [line.strip() for line in actual_logs if phrase not in line]
     actual_logs = [line for line in actual_logs if line and line != '\'']
