@@ -10,6 +10,7 @@ from helper_functions import has_brm_error, get_tel_order_number, get_logs_for_o
     fine_flag_value_replace, update_cf_service, delete_cf_service, get_return_flag
 from om_tp import get_order_info, get_process_errors, get_order_data, has_brm_process_error
 from om_tp_wzmuk_processing import get_users_data_from_xls, disable_user, new_ro_user
+from otsa_processing import to_cancel
 from remedy import get_all_incidents, get_work_info, has_exactly_one_entry, add_work_info, reassign_incident, \
     get_incidents, close_incident, is_work_info_empty, get_pending_incidents, assign_incident, update_summary
 
@@ -81,6 +82,8 @@ def handle_brm_errors():
                             update_summary(inc, 'BRM3') if return_flag else update_summary(inc, 'BRM2')
 
         elif tel_order_number and (is_work_info_empty(work_info) or has_exactly_one_entry(work_info)):
+            if to_cancel(inc):
+                continue
             process_errors = get_process_errors(order_info)
             if has_brm_process_error(process_errors) or has_brm_error(work_info):
                 logs = get_logs_for_order(tel_order_number)
@@ -204,7 +207,7 @@ def pbi184471():
 
 
 if __name__ == '__main__':
-    cancel_om_orders()
+    #cancel_om_orders()
     om_tp_wzmuk()
     handle_brm_errors()
     close_pending_om_tp()
