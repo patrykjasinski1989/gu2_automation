@@ -82,7 +82,7 @@ def handle_brm_errors():
                             update_summary(inc, 'BRM3') if return_flag else update_summary(inc, 'BRM2')
 
         elif tel_order_number and (is_work_info_empty(work_info) or has_exactly_one_entry(work_info)):
-            if to_cancel(inc):
+            if to_cancel(inc) or 'pipi.sh error' in inc['summary']:
                 continue
             process_errors = get_process_errors(order_info)
             if has_brm_process_error(process_errors) or has_brm_error(work_info):
@@ -96,6 +96,7 @@ def handle_brm_errors():
                 elif len(logs) == 1 and not is_gbill_out_for_order(provik, ord_id):
                     resubmit_successful = resubmit_goal(tel_order_number)
                     if resubmit_successful:
+                        update_summary(inc, 'pipi.sh error')
                         print('{} Zamówienie {} ponowione w OM TP'.format(inc['inc'], tel_order_number),
                               file=sys.stderr)
                 else:
