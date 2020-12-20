@@ -52,7 +52,33 @@ def has_brm_process_error(process_errors):
     return False
 
 
+def is_ctx_session(ord_id):
+    url = f'{SERVER}/BlsOmConsole/getRuntimeKeys.dsp?ord_id={ord_id}\&searchInArchive=true'
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(config.EAI_IS['server'], username=config.EAI_IS['user'], password=config.EAI_IS['password'],
+                       allow_agent=False)
+    _, stdout, _ = ssh_client.exec_command(f'curl -k -u {USER}:{PASSWORD} {url} | grep -A1 CTX_CESSION | grep TRUE')
+    stdout = ''.join(stdout.readlines())
+    ssh_client.close()
+    return 'TRUE' in stdout
+
+
+def set_business_error(pgo_id):
+    url = f'{SERVER}/invoke/tp.ordermanagement.console.pub/updateProcessGoalStatus?pgoId={pgo_id}\&status=BUSINESS_ERROR'
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(config.EAI_IS['server'], username=config.EAI_IS['user'], password=config.EAI_IS['password'],
+                       allow_agent=False)
+    _, stdout, _ = ssh_client.exec_command('curl -k -u {}:{} {}'.format(USER, PASSWORD, url))
+    stdout = ''.join(stdout.readlines())
+    ssh_client.close()
+
+
 if __name__ == '__main__':
+    print(is_ctx_session('54787555'))
+    exit(37)
+
     order_info_ = get_order_info('TEL000128143169')
 
     order_data_ = get_order_data(order_info_)

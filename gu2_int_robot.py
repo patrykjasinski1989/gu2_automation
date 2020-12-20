@@ -5,10 +5,11 @@ import sys
 from time import sleep
 
 from db.provik import get_latest_order, provik_connection, is_gbill_out_for_order, has_gpreprov, cancel_order, \
-    has_pbi184471_error
+    has_pbi184471_error, is_geqret_processing, get_pgo_id
 from helper_functions import has_brm_error, get_tel_order_number, get_logs_for_order, resubmit_goal, \
     fine_flag_value_replace, update_cf_service, delete_cf_service, get_return_flag
-from om_tp import get_order_info, get_process_errors, get_order_data, has_brm_process_error
+from om_tp import get_order_info, get_process_errors, get_order_data, has_brm_process_error, is_ctx_session, \
+    set_business_error
 from om_tp_wzmuk_processing import get_users_data_from_xls, disable_user, new_ro_user
 from otsa_processing import to_cancel
 from remedy import get_all_incidents, get_work_info, has_exactly_one_entry, add_work_info, reassign_incident, \
@@ -174,7 +175,8 @@ def cancel_om_orders():
         if 'OM zamowienie (ORD_ID)' in order_data:
             ord_id = order_data['OM zamowienie (ORD_ID)']
 
-        return_flag = get_return_flag(work_info)
+        if is_geqret_processing(provik, ord_id) or is_ctx_session(ord_id):
+            continue
 
         for entry in work_info:
             notes = '\r\n'.join(entry['notes']).lower()
@@ -182,12 +184,11 @@ def cancel_om_orders():
             if 'crm' in summary and \
                     ('anulowanie z bazy' in notes or 'do anulowania z bazy' in notes) \
                     and not has_gpreprov(provik, ord_id):
+                pgo_id = get_pgo_id(provik, ord_id, 'GBILL')
+                set_business_error(pgo_id)
                 cancel_order(provik, ord_id)
-                if return_flag:
-                    add_work_info(inc, 'OM_TP', 'Zamówienie anulowane.')
-                    reassign_incident(inc, 'VC3_BSS_CRM_FIX')
-                else:
-                    close_incident(inc, 'Zamówienie {} anulowane.'.format(tel_order_number))
+                add_work_info(inc, 'OM_TP', 'Zamówienie anulowane.')
+                reassign_incident(inc, 'VC3_BSS_CRM_FIX')
     provik.close()
 
 
@@ -208,7 +209,7 @@ def pbi184471():
 
 
 if __name__ == '__main__':
-    #cancel_om_orders()
+    cancel_om_orders()
     om_tp_wzmuk()
     handle_brm_errors()
     close_pending_om_tp()

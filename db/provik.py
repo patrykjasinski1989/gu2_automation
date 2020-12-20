@@ -35,9 +35,29 @@ def is_gbill_out_for_order(con, ord_id):
     return cur.rowcount == 1
 
 
+def get_pgo_id(con, ord_id, pgo_goal_name):
+    query = """select pgo+id from om_process_goals 
+    where pgo_ord_id = '{}' and pgo_goal_name = '{}'""".format(ord_id, pgo_goal_name)
+    cur = con.cursor()
+    cur.execute(query)
+    row = cur.fetchone()
+    cur.close()
+    return row[0]
+
+
 def has_gpreprov(con, ord_id):
     query = """select pgo_goal_name, pgo_state from om_process_goals 
-    where pgo_ord_id = '{}' and pgo_goal_name = 'GPREPROV'""".format(ord_id)
+        where pgo_ord_id = '{}' and pgo_goal_name = 'GPREPROV'""".format(ord_id)
+    cur = con.cursor()
+    cur.execute(query)
+    cur.fetchall()
+    cur.close()
+    return cur.rowcount > 0
+
+
+def is_geqret_processing(con, ord_id):
+    query = """select pgo_goal_name, pgo_state from om_process_goals 
+        where pgo_ord_id = '{}' and pgo_goal_name = 'GEQRET' and pgo_state = 'PROCESSING'""".format(ord_id)
     cur = con.cursor()
     cur.execute(query)
     cur.fetchall()

@@ -110,3 +110,4 @@ venv3/
 .idea/
 nohup.out
 *.bak*
+pyremedy/
