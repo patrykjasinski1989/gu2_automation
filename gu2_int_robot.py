@@ -5,7 +5,7 @@ import sys
 from time import sleep
 
 from db.provik import get_latest_order, provik_connection, is_gbill_out_for_order, has_gpreprov, cancel_order, \
-    has_pbi184471_error, is_geqret_processing, get_pgo_id
+    has_pbi184471_error, is_geqret_processing, get_pgo_id, get_bpm_id, delete_process_timeout
 from helper_functions import has_brm_error, get_tel_order_number, get_logs_for_order, resubmit_goal, \
     fine_flag_value_replace, update_cf_service, delete_cf_service, get_return_flag
 from om_tp import get_order_info, get_process_errors, get_order_data, has_brm_process_error, is_ctx_session, \
@@ -175,7 +175,7 @@ def cancel_om_orders():
         if 'OM zamowienie (ORD_ID)' in order_data:
             ord_id = order_data['OM zamowienie (ORD_ID)']
 
-        if is_geqret_processing(provik, ord_id) or is_ctx_session(ord_id):
+        if is_ctx_session(ord_id):
             continue
 
         for entry in work_info:
@@ -184,6 +184,14 @@ def cancel_om_orders():
             if 'crm' in summary and \
                     ('anulowanie z bazy' in notes or 'do anulowania z bazy' in notes) \
                     and not has_gpreprov(provik, ord_id):
+
+                if is_geqret_processing(provik, ord_id):
+                    pgo_ids = get_pgo_id(provik, ord_id, 'GEQRET')
+                    for pgo_id in pgo_ids:
+                        set_business_error(pgo_id)
+                        bpm_id = get_bpm_id(provik, pgo_id)
+                        delete_process_timeout(provik, bpm_id)
+
                 pgo_id = get_pgo_id(provik, ord_id, 'GBILL')
                 set_business_error(pgo_id)
                 cancel_order(provik, ord_id)

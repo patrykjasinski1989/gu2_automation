@@ -36,13 +36,33 @@ def is_gbill_out_for_order(con, ord_id):
 
 
 def get_pgo_id(con, ord_id, pgo_goal_name):
-    query = """select pgo+id from om_process_goals 
+    query = """select pgo_id from om_process_goals 
     where pgo_ord_id = '{}' and pgo_goal_name = '{}'""".format(ord_id, pgo_goal_name)
     cur = con.cursor()
     cur.execute(query)
-    row = cur.fetchone()
+    row = cur.fetchall()
     cur.close()
-    return row[0]
+    if len(row) == 1:
+        return row[0]
+    else:
+        return [int(pgo_id[0]) for pgo_id in row]
+
+
+def get_bpm_id(con, pgo_id):
+    query = """select pgo_bpm_id from om_process_goals where pgo_id = '{}'""".format(pgo_id)
+    cur = con.cursor()
+    cur.execute(query)
+    row = cur.fetchall()
+    cur.close()
+    return row[0][0]
+
+
+def delete_process_timeout(con, bpm_id):
+    query = """delete from om_process_timeout where to_instanceid = '{}'""".format(bpm_id)
+    cur = con.cursor()
+    cur.execute(query)
+    cur.close()
+    con.commit()
 
 
 def has_gpreprov(con, ord_id):
