@@ -172,10 +172,12 @@ def cancel_om_orders():
         tel_order_number = get_tel_order_number(inc)
         order_info = get_order_info(tel_order_number)
         order_data = get_order_data(order_info)
+
+        ord_id = None
         if 'OM zamowienie (ORD_ID)' in order_data:
             ord_id = order_data['OM zamowienie (ORD_ID)']
 
-        if is_ctx_session(ord_id):
+        if not ord_id or is_ctx_session(ord_id):
             continue
 
         for entry in work_info:
